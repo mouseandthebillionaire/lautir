@@ -27,7 +27,7 @@ public class WordInputManager : MonoBehaviour {
     // Update is called once per frame
     void Update() {
         if (GameManager.S.IsGameAvailable) {
-            if (keyNum < 5) {
+            if (keyNum < letters.Length) {
                 submitButton.SetActive(false);
                 GetKey();
             }

@@ -71,6 +71,6 @@ public class GameManager : MonoBehaviour
     }
 
     private void GetTextInput(){
-        informationText.text = "enter a five letter word";
+        informationText.text = "enter a six letter word";
     }
 }
