@@ -5,6 +5,8 @@ using TMPro;
 public class GameManager : MonoBehaviour
 {
 
+    public static GameManager S;
+    
     public TMP_Text informationText;    
     
     public int availableStartHour = 18;
@@ -15,11 +17,18 @@ public class GameManager : MonoBehaviour
     public bool enforceTimeWindow = true;
     public bool IsGameAvailable => !enforceTimeWindow || IsWithinAvailabilityWindow();
 
+    void Awake(){
+        S = this;
+    }
+    
     void Start()
     {
         if (enforceTimeWindow && !IsGameAvailable)
         {
             OnOutsideAvailabilityWindow();
+        } else {
+            // Let the Player Enter a word
+            GetTextInput();
         }
     }
 
@@ -40,7 +49,6 @@ public class GameManager : MonoBehaviour
         // Window crosses midnight (e.g. 22:00 - 02:00)
         return now >= start || now < end;
 
-        informationText.text = "enter a five letter word";
     }
 
     /// <summary>Override or call from UI: show message, block input, or load a "come back later" screen.</summary>
@@ -60,5 +68,9 @@ public class GameManager : MonoBehaviour
             return (todayStart - now).TotalMinutes;
         var tomorrowStart = todayStart.AddDays(1);
         return (tomorrowStart - now).TotalMinutes;
+    }
+
+    private void GetTextInput(){
+        informationText.text = "enter a five letter word";
     }
 }
