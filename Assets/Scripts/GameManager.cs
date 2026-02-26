@@ -9,10 +9,9 @@ public class GameManager : MonoBehaviour
     
     public TMP_Text informationText;    
     
-    public int availableStartHour = 18;
-    public int availableStartMinute = 0;
-    public int availableEndHour = 22;
-    public int availableEndMinute = 0;
+    public int availableHour = 18;
+    public int availableMinute = 0;
+    public int durationMinutes = 5;
 
     public bool enforceTimeWindow = true;
     public bool IsGameAvailable => !enforceTimeWindow || IsWithinAvailabilityWindow();
@@ -41,20 +40,15 @@ public class GameManager : MonoBehaviour
     bool IsWithinAvailabilityWindow()
     {
         var now = DateTime.Now.TimeOfDay;
-        var start = new TimeSpan(availableStartHour, availableStartMinute, 0);
-        var end = new TimeSpan(availableEndHour, availableEndMinute, 0);
-
-        if (start <= end)
-            return now >= start && now < end;
-        // Window crosses midnight (e.g. 22:00 - 02:00)
-        return now >= start || now < end;
-
+        var start = new TimeSpan(availableHour, availableMinute, 0);
+        var end = new TimeSpan(availableHour, availableMinute + durationMinutes, 0);
+        return now >= start && now < end;
     }
 
     /// <summary>Override or call from UI: show message, block input, or load a "come back later" screen.</summary>
     protected virtual void OnOutsideAvailabilityWindow()
     {
-        informationText.text = $"only available between {availableStartHour:D2}:{availableStartMinute:D2} and {availableEndHour:D2}:{availableEndMinute:D2}. \n please come back later.";
+        informationText.text = $"only available between {availableHour:D2}:{availableMinute:D2} and {availableHour:D2}:{availableMinute + durationMinutes:D2}. \n please come back later.";
         // TODO: e.g. show UI panel, disable player input, or load a "come back later" scene
     }
 
@@ -63,11 +57,24 @@ public class GameManager : MonoBehaviour
     {
         if (IsGameAvailable) return 0;
         var now = DateTime.Now;
-        var todayStart = new DateTime(now.Year, now.Month, now.Day, availableStartHour, availableStartMinute, 0);
+        var todayStart = new DateTime(now.Year, now.Month, now.Day, availableHour, availableMinute, 0);
         if (now < todayStart)
             return (todayStart - now).TotalMinutes;
         var tomorrowStart = todayStart.AddDays(1);
         return (tomorrowStart - now).TotalMinutes;
+    }
+
+    /// <summary>Minutes since the availability window ended (0 if currently available). Use for move-away ramp from home.</summary>
+    public double MinutesSinceAvailableEnded()
+    {
+        if (IsGameAvailable) return 0;
+        var now = DateTime.Now;
+        var todayStart = new DateTime(now.Year, now.Month, now.Day, availableHour, availableMinute, 0);
+        var windowEnd = todayStart.AddMinutes(durationMinutes);
+        if (now >= windowEnd)
+            return (now - windowEnd).TotalMinutes;
+        var yesterdayEnd = todayStart.AddDays(-1).AddMinutes(durationMinutes);
+        return (now - yesterdayEnd).TotalMinutes;
     }
 
     private void GetTextInput(){

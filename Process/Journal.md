@@ -32,7 +32,7 @@ Discussed this with [Z](https://github.com/zSpaceSheikh), and she/we had some co
 * Similarly, there are times of day/month/year when things align (both in nature and in the built environment) - certain rock formations during the summer solstice, Manhattanhenge
 * In general, there is something to be said for _collectively_ waiting for something - live television is an example of this, waiting for a concert to start, the phenomena of [HQ Trivia](https://en.wikipedia.org/wiki/HQ_(video_game)) or Questlove's live DJ sets during lockdown
 
-With this, could there be an alignment on the screen that happens as we get closer to the available time for the interaction? A possible cool "timer" that doesn't rely on the obvious clock countdown. The technique that has already been done with LTHC, IE, and eikon could be used here, but also: the glitcheffects plugin is both a) a bit too cumbersome/wonky in the browser, and b) no longer supported, so possible making my own shader effects might be the way to go. 
+With this, could there be an alignment on the screen that happens as we get closer to the available time for the interaction? A possible "timer" that doesn't rely on the obvious clock countdown. The visual technique that has already been done with LTHC, IE, and eikon could be used here, but also: the glitcheffects plugin is both a) a bit too cumbersome/wonky in the browser, and b) no longer supported, so possibly making my own shader effects might be the way to go. 
 
 ## Notes
 
