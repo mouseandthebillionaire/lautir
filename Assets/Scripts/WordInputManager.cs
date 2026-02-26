@@ -1,5 +1,7 @@
+using System.Collections;
 using UnityEngine;
 using TMPro;
+using UnityEngine.UI;
 
 public class WordInputManager : MonoBehaviour {
     public GameObject[] textBoxes;
@@ -11,17 +13,22 @@ public class WordInputManager : MonoBehaviour {
     private int keyNum;
     private string currKey;
 
+    public static WordInputManager S;
+
+    void Awake(){
+        S = this;
+    }
     
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start() {
         Reset();
-        
-        if(!GameManager.S.IsGameAvailable){
-            for(int i = 0; i < textBoxes.Length; i++) {
-                textBoxes[i].SetActive(false);
-            }
-            
+        if(GameManager.S.IsGameAvailable){
+            ShowBoxes();
+        } else {
+            HideBoxes();
         }
+                    
+            
     }
 
     // Update is called once per frame
@@ -76,4 +83,44 @@ public class WordInputManager : MonoBehaviour {
         Debug.Log(word);
         
     }
+
+    public void ShowBoxes(){
+        for (int i = 0; i < textBoxes.Length; i++) {
+            textBoxes[i].SetActive(true);
+        }
+        StartCoroutine(FadeBoxes(1f, 3f));
+    }
+
+    public void HideBoxes(){
+       StartCoroutine(FadeBoxes(0f, 3f));
+        for (int i = 0; i < textBoxes.Length; i++) {
+            textBoxes[i].SetActive(false);
+        }
+    }
+
+    public IEnumerator FadeBoxes(float targetAlpha, float duration){
+        if (textBoxes.Length == 0 || duration <= 0f) yield break;
+        Image[] images = new Image[textBoxes.Length];
+        float[] startAlphas = new float[textBoxes.Length];
+        for (int i = 0; i < textBoxes.Length; i++) {
+            images[i] = textBoxes[i].GetComponent<Image>();
+            startAlphas[i] = images[i].color.a;
+        }
+        float elapsed = 0f;
+        while (elapsed < duration) {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            for (int i = 0; i < images.Length; i++) {
+                float a = Mathf.Lerp(startAlphas[i], targetAlpha, t);
+                Color c = images[i].color;
+                images[i].color = new Color(c.r, c.g, c.b, a);
+            }
+            yield return null;
+        }
+        for (int i = 0; i < images.Length; i++) {
+            Color c = images[i].color;
+            images[i].color = new Color(c.r, c.g, c.b, targetAlpha);
+        }
+    }
+
 }

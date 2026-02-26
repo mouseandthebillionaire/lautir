@@ -493,7 +493,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: -350}
   m_SizeDelta: {x: 1000, y: 200}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &204490201
@@ -770,7 +770,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.56007475, g: 0.5849056, b: 0.5695092, a: 0}
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -867,6 +867,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1040702403}
+  - component: {fileID: 1040702404}
   m_Layer: 0
   m_Name: Background
   m_TagString: Untagged
@@ -889,6 +890,20 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1040702404
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1040702402}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 520862d9fb118473db0091cf4a7c3be0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  backgroundObjectPrefab: {fileID: 4939241366233209134, guid: e8cd9576bf5394e7bb5df2d79f1d5324, type: 3}
+  numberOfObjects: 40
 --- !u!1001 &1076102825
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1247,7 +1262,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 100}
+  m_AnchoredPosition: {x: 0, y: 60}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1509934284
@@ -1323,11 +1338,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   informationText: {fileID: 204490201}
-  availableStartHour: 15
-  availableStartMinute: 13
-  availableEndHour: 15
-  availableEndMinute: 15
-  enforceTimeWindow: 0
+  availableHour: 16
+  availableMinute: 10
+  durationMinutes: 1
+  enforceTimeWindow: 1
 --- !u!1 &1591090470
 GameObject:
   m_ObjectHideFlags: 0
@@ -1532,7 +1546,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1924518866
 RectTransform:
   m_ObjectHideFlags: 0

@@ -3,7 +3,7 @@ using UnityEngine;
 public class BackgroundObject : MonoBehaviour
 {
     public float[] properLoc = {0, 1.75f};
-    public float[] properScale = {6f, 6f};
+    public float properScale = 7f;
     public float properOpacity = 1f;
     [Tooltip("Opacity when scattered (away). At home, objects overlap and add to white.")]
     [Range(0.01f, 1f)] public float awayOpacity = 0.2f;
@@ -111,7 +111,7 @@ public class BackgroundObject : MonoBehaviour
         Vector3 homePos = new Vector3(properLoc[0], properLoc[1], 0);
         transform.localPosition = Vector3.Lerp(awayPos, homePos, t);
 
-        float scale = Mathf.Lerp(awayScale, properScale[0], t);
+        float scale = Mathf.Lerp(awayScale, properScale, t);
         transform.localScale = new Vector3(scale, scale, 1);
 
         float alpha = Mathf.Lerp(awayOpacity, properOpacity, t);

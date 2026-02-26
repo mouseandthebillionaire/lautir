@@ -22,19 +22,20 @@ public class GameManager : MonoBehaviour
     
     void Start()
     {
-        if (enforceTimeWindow && !IsGameAvailable)
-        {
-            OnOutsideAvailabilityWindow();
-        } else {
-            // Let the Player Enter a word
-            GetTextInput();
-        }
     }
 
     void Update()
     {
-        // Optional: re-check each frame if you need to disable mid-session when window closes
-        // if (enforceTimeWindow && !IsGameAvailable) { ... }
+        // This might be too fast / too often
+        if (enforceTimeWindow && !IsGameAvailable)
+        {
+            OnOutsideAvailabilityWindow();
+            WordInputManager.S.HideBoxes();
+        } else {
+            // Let the Player Enter a word
+            GetTextInput();
+            WordInputManager.S.ShowBoxes();
+        }
     }
 
     bool IsWithinAvailabilityWindow()
@@ -79,5 +80,6 @@ public class GameManager : MonoBehaviour
 
     private void GetTextInput(){
         informationText.text = "enter a six letter word";
+        Debug.Log("test");
     }
 }
