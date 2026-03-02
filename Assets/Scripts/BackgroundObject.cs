@@ -14,15 +14,25 @@ public class BackgroundObject : MonoBehaviour
     [Tooltip("Lower = object lingers at each end longer, then moves more sharply. 1 = linear.")]
     [Range(0.05f, 1f)] public float approachCurvePower = 0.2f;
     float awayX, awayY, awayScale;
+    float baseScale; // scale from MoveHome; pulse is applied on top in Update
+    float homeBlend;  // 1 = at home (target time), 0 = away; used to dampen pulse near home
 
     /// <summary>One of R, G, or B so overlapping at home adds to white (additive blending).</summary>
     Color baseTint;
     const float ChannelAlpha = 1f / 3f; // so R+G+B overlap = white
 
+    [Tooltip("Assign in editor to ensure shader is included in WebGL build. Otherwise uses Shader.Find (requires shader in Graphics > Always Included Shaders).")]
+    [SerializeField] Shader additiveShader;
+
     // Animation Values
     private SpriteRenderer sr;
     private Sprite[] frames;
     public float frameRate = 10f;
+
+    // Pulse Values
+    private float pulseScale = 1f;
+    private float pulseSpeed = 2f;
+    private float pulseAmplitude = 0.1f;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -35,6 +45,7 @@ public class BackgroundObject : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        Pulse();
     }
 
     void InitializeAnimation()
@@ -43,14 +54,19 @@ public class BackgroundObject : MonoBehaviour
         frames = Resources.LoadAll<Sprite>("Circles");
         InvokeRepeating("Animate", 0f, 1f / frameRate);
         SetAdditiveBlending();
+
+        // Randomize Pulse Values
+        pulseScale = Random.Range(0.9f, 1.1f);
+        pulseSpeed = Random.Range(.1f, 1f);
+        pulseAmplitude = Random.Range(0.05f, 0.10f);
     }
 
     void SetAdditiveBlending()
     {
-        Shader additiveShader = Shader.Find("Custom/Sprites Additive");
-        if (additiveShader != null)
-            sr.material = new Material(additiveShader);
-        // If shader not found, sprites keep default blend; R/G/B tints still applied
+        Shader shader = additiveShader != null ? additiveShader : Shader.Find("Custom/Sprites Additive");
+        if (shader != null)
+            sr.material = new Material(shader);
+        // If shader not found (e.g. not in WebGL build), sprites keep default blend; add to Graphics > Always Included Shaders or assign above
     }
 
     void SetAwayValues()
@@ -65,7 +81,8 @@ public class BackgroundObject : MonoBehaviour
         else baseTint = new Color(0f, 0f, 1f, ChannelAlpha);
 
         transform.localPosition = new Vector3(awayX, awayY, 0);
-        transform.localScale = new Vector3(awayScale, awayScale, 1);
+        baseScale = awayScale;
+        transform.localScale = new Vector3(baseScale, baseScale, 1);
         sr.color = new Color(baseTint.r, baseTint.g, baseTint.b, awayOpacity);
     }
 
@@ -111,8 +128,8 @@ public class BackgroundObject : MonoBehaviour
         Vector3 homePos = new Vector3(properLoc[0], properLoc[1], 0);
         transform.localPosition = Vector3.Lerp(awayPos, homePos, t);
 
-        float scale = Mathf.Lerp(awayScale, properScale, t);
-        transform.localScale = new Vector3(scale, scale, 1);
+        baseScale = Mathf.Lerp(awayScale, properScale, t);
+        homeBlend = t;
 
         float alpha = Mathf.Lerp(awayOpacity, properOpacity, t);
         sr.color = new Color(baseTint.r, baseTint.g, baseTint.b, alpha);
@@ -122,5 +139,15 @@ public class BackgroundObject : MonoBehaviour
     {
         int frameIndex = Random.Range(0, frames.Length);
         sr.sprite = frames[frameIndex];
+    }
+
+    void Pulse()
+    {
+        // Less pronounced as we get closer to target time (homeBlend → 1)
+        float effectiveAmplitude = pulseAmplitude * (1f - homeBlend);
+        float t = (Mathf.Sin(Time.time * pulseSpeed) + 1f) * 0.5f;
+        float pulseMult = Mathf.Lerp(1f, 1f + effectiveAmplitude, t);
+        float s = baseScale * pulseScale * pulseMult;
+        transform.localScale = new Vector3(s, s, 1);
     }
 }

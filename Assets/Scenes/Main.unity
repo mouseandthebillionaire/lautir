@@ -770,7 +770,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
+  m_BackGroundColor: {r: 0.39471573, g: 0.2277056, b: 0.4056604, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -1339,7 +1339,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   informationText: {fileID: 204490201}
   availableHour: 16
-  availableMinute: 10
+  availableMinute: 24
   durationMinutes: 1
   enforceTimeWindow: 1
 --- !u!1 &1591090470

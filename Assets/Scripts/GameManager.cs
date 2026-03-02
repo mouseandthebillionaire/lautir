@@ -16,26 +16,33 @@ public class GameManager : MonoBehaviour
     public bool enforceTimeWindow = true;
     public bool IsGameAvailable => !enforceTimeWindow || IsWithinAvailabilityWindow();
 
-    void Awake(){
+    bool _wasGameAvailable;
+
+    void Awake() {
         S = this;
     }
-    
-    void Start()
-    {
+
+    void Start() {
+        _wasGameAvailable = IsGameAvailable;  // So we don't trigger enter/exit on first Update
     }
 
-    void Update()
-    {
-        // This might be too fast / too often
-        if (enforceTimeWindow && !IsGameAvailable)
-        {
-            OnOutsideAvailabilityWindow();
-            WordInputManager.S.HideBoxes();
-        } else {
-            // Let the Player Enter a word
+    void Update() {
+        bool nowAvailable = IsGameAvailable;
+
+        if (nowAvailable) {
             GetTextInput();
-            WordInputManager.S.ShowBoxes();
+        } else {
+            OnOutsideAvailabilityWindow();
         }
+
+        // Only show/hide on transition into or out of the time window
+        if (_wasGameAvailable && !nowAvailable) {
+            WordInputManager.S.HideBoxes();  // Exited correct time: fade out
+        } else if (!_wasGameAvailable && nowAvailable) {
+            WordInputManager.S.ShowBoxes();  // Entered correct time: fade in
+        }
+
+        _wasGameAvailable = nowAvailable;
     }
 
     bool IsWithinAvailabilityWindow()
@@ -49,8 +56,9 @@ public class GameManager : MonoBehaviour
     /// <summary>Override or call from UI: show message, block input, or load a "come back later" screen.</summary>
     protected virtual void OnOutsideAvailabilityWindow()
     {
-        informationText.text = $"only available between {availableHour:D2}:{availableMinute:D2} and {availableHour:D2}:{availableMinute + durationMinutes:D2}. \n please come back later.";
+        //informationText.text = $"only available between {availableHour:D2}:{availableMinute:D2} and {availableHour:D2}:{availableMinute + durationMinutes:D2}. \n please come back later.";
         // TODO: e.g. show UI panel, disable player input, or load a "come back later" scene
+        informationText.text = "";
     }
 
     /// <summary>Minutes until the game becomes available (0 if already available).</summary>
@@ -79,7 +87,6 @@ public class GameManager : MonoBehaviour
     }
 
     private void GetTextInput(){
-        informationText.text = "enter a six letter word";
-        Debug.Log("test");
+        informationText.text = "begin";
     }
 }

@@ -22,13 +22,11 @@ public class WordInputManager : MonoBehaviour {
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start() {
         Reset();
-        if(GameManager.S.IsGameAvailable){
-            ShowBoxes();
+        if (GameManager.S != null && GameManager.S.IsGameAvailable) {
+            ShowBoxes();  // In correct time at start: fade in
         } else {
-            HideBoxes();
+            HideBoxesImmediate();  // Not in correct time at start: don't show at all (no fade)
         }
-                    
-            
     }
 
     // Update is called once per frame
@@ -84,15 +82,40 @@ public class WordInputManager : MonoBehaviour {
         
     }
 
-    public void ShowBoxes(){
+    /// <summary>Fade in. Use when we enter the correct time (at start or while running).</summary>
+    public void ShowBoxes() {
+        StopAllCoroutines();  // Cancel any in-progress fade out
         for (int i = 0; i < textBoxes.Length; i++) {
             textBoxes[i].SetActive(true);
+            Image img = textBoxes[i].GetComponent<Image>();
+            if (img != null) {
+                Color c = img.color;
+                img.color = new Color(c.r, c.g, c.b, 0f);
+            }
         }
         StartCoroutine(FadeBoxes(1f, 3f));
     }
 
-    public void HideBoxes(){
-       StartCoroutine(FadeBoxes(0f, 3f));
+    /// <summary>Hide boxes instantly (no fade). Use when game starts outside the time window.</summary>
+    public void HideBoxesImmediate() {
+        StopAllCoroutines();  // Cancel any in-progress fade
+        for (int i = 0; i < textBoxes.Length; i++) {
+            Image img = textBoxes[i].GetComponent<Image>();
+            if (img != null) {
+                Color c = img.color;
+                img.color = new Color(c.r, c.g, c.b, 0f);
+            }
+            textBoxes[i].SetActive(false);
+        }
+    }
+
+    /// <summary>Fade out then hide. Use when we exit the correct time while game is running.</summary>
+    public void HideBoxes() {
+        StartCoroutine(HideBoxesAfterFade());
+    }
+
+    IEnumerator HideBoxesAfterFade() {
+        yield return FadeBoxes(0f, 3f);
         for (int i = 0; i < textBoxes.Length; i++) {
             textBoxes[i].SetActive(false);
         }
@@ -104,6 +127,7 @@ public class WordInputManager : MonoBehaviour {
         float[] startAlphas = new float[textBoxes.Length];
         for (int i = 0; i < textBoxes.Length; i++) {
             images[i] = textBoxes[i].GetComponent<Image>();
+            if (images[i] == null) continue;
             startAlphas[i] = images[i].color.a;
         }
         float elapsed = 0f;
@@ -111,6 +135,7 @@ public class WordInputManager : MonoBehaviour {
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / duration);
             for (int i = 0; i < images.Length; i++) {
+                if (images[i] == null) continue;
                 float a = Mathf.Lerp(startAlphas[i], targetAlpha, t);
                 Color c = images[i].color;
                 images[i].color = new Color(c.r, c.g, c.b, a);
@@ -118,6 +143,7 @@ public class WordInputManager : MonoBehaviour {
             yield return null;
         }
         for (int i = 0; i < images.Length; i++) {
+            if (images[i] == null) continue;
             Color c = images[i].color;
             images[i].color = new Color(c.r, c.g, c.b, targetAlpha);
         }

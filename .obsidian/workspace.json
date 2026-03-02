@@ -185,6 +185,11 @@
   },
   "active": "4b9ff604c6bf1229",
   "lastOpenFiles": [
+    "Temp/ADB-Refresh45c7d370460f943649e421c2b8924828",
+    "Media.md",
+    "Process/Journal.md",
+    "Library/BurstCache/JIT/BurstCacheManifest.cm",
+    "Temp/ADB-Refresh011ca962d2f734dd9a933a76c0a9087b",
     "Temp/ADB-Refresh61b691846fcfd44a1ba55767c896b728",
     "Library/Artifacts/84/84dc8aea85c682bf2e7d11733d7358e1",
     "Temp/ADB-Refresh9d32e04fc540e45608a70a2ef9856cf0",
@@ -193,9 +198,6 @@
     "Library/Bee/TundraBuildState.state",
     "Library/Bee/artifacts/200b0aE.dag/Assembly-CSharp.ref.dll",
     "Library/Bee/artifacts/200b0aE.dag/Assembly-CSharp.pdb",
-    "Library/Bee/artifacts/200b0aE.dag/Assembly-CSharp.dll",
-    "Temp/ADB-Refreshab27897b773a04ad482674b07ad946ca",
-    "Library/Artifacts/d2/d249c7bdf5c68116ec37c501b9d0e56b",
     "Assets/Resources/Circles/20.png",
     "Assets/Resources/Circles/19.png",
     "Assets/Resources/Circles/18.png",
@@ -228,8 +230,6 @@
     "Library/PackageCache/com.unity.burst@59eb6f11d242/Documentation~/csharp-hpc-overview.md",
     "Library/PackageCache/com.unity.burst@59eb6f11d242/Documentation~/csharp-function-pointers.md",
     "Library/PackageCache/com.unity.burst@59eb6f11d242/Documentation~/csharp-calling-burst-code.md",
-    "Library/PackageCache/com.unity.burst@59eb6f11d242/Documentation~/csharp-burst-intrinsics.md",
-    "Library/PackageCache/com.unity.burst@59eb6f11d242/Documentation~/csharp-burst-intrinsics-processors.md",
-    "Library/PackageCache/com.unity.burst@59eb6f11d242/Documentation~/csharp-burst-intrinsics-neon.md"
+    "Library/PackageCache/com.unity.burst@59eb6f11d242/Documentation~/csharp-burst-intrinsics.md"
   ]
 }
