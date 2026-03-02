@@ -24,16 +24,35 @@ I'm starting to think about what exactly this _looks_ like upon submission. Do t
 
 And with that! Next stage is building out the RNBO patch. I could obviously also go with vanilla Unity audio or FMOD, but I think RNBO gives me more granular control and weirder options. Hopefully I will remember how to integrate it all!
 
-## 02.20.24
+## 02.24.26
 
 Discussed this with [Z](https://github.com/zSpaceSheikh), and she/we had some cool thoughts that I wanted to jot down real quick:
 
-* Nature has a history of making us wait (the blooming of the corpse flower, the return of the cicadas, solar eclipses, meteor showers, Haley's comet) and it is always exciting when these come around 
-* Similarly, there are times of day/month/year when things align (both in nature and in the built environment) - certain rock formations during the summer solstice, Manhattanhenge
+* Nature often makes us wait (the blooming of the corpse flower, the return of the cicadas, solar eclipses, meteor showers, Haley's comet) and it is always exciting when these come around 
+* Similarly, there are times of day/month/year when things align (both in nature and in the built environment) - certain rock formations during the summer solstice, [Manhattanhenge](https://en.wikipedia.org/wiki/Manhattanhenge)
 * In general, there is something to be said for _collectively_ waiting for something - live television is an example of this, waiting for a concert to start, the phenomena of [HQ Trivia](https://en.wikipedia.org/wiki/HQ_(video_game)) or Questlove's live DJ sets during lockdown
 
 With this, could there be an alignment on the screen that happens as we get closer to the available time for the interaction? A possible "timer" that doesn't rely on the obvious clock countdown. The visual technique that has already been done with LTHC, IE, and eikon could be used here, but also: the glitcheffects plugin is both a) a bit too cumbersome/wonky in the browser, and b) no longer supported, so possibly making my own shader effects might be the way to go. 
 
+## 02.28.26 | Alignment Prototype
+
+[Playable Prototype](../docs/0.1/)
+
+![12 hours from the time](Media/twelveHours.gif)
+
+Spent last week working on the alignment experiment. I repurposed the [eikon](https://mouseandthebillionaire.com/eikon/) circles, and switched the Unity colorspace to additive RBG, so that when they all line up in the middle (as we get closer to the target time) it creates a (mostly) white unified circle. 
+
+As far as the actual playable prototype, it's kind of boring right now? There's just the circles to look at (though the word-entering-UI does appear if you are within the correct minute[^2]) For future versions, maybe it makes sense to have some kind of UI slider so that you can see what it looks like at various points of day? I don't know.
+
+![1 minute from time](Media/oneMinute.gif)
+
+I really like this idea of alignment serving as a visual cue to when the interaction is available. In general, this notion of alignment is super interesting, especially when placed in a non-organic, technological domain. I was surprised when reading the [Manhattanhenge](https://en.wikipedia.org/wiki/Manhattanhenge) Wikipedia page that there wasn't a specific name for this phenomenon, but L did some research which came up with "solar alignment," "collinearity," and, interestingly, "apophenia" (which is the human tendency to perceive meaningful patters, order, or connections in random or unrelated things).
+
+Rudolf Otto's term "numinous" from _[The Idea of the Holy](https://archive.org/details/in.ernet.dli.2015.262513)_ also cropped up in this search which is something that I haven't thought about in a while. Not sure if it's going to play into this piece or the greater PhD ideas, but definitely something to chew on for a bit.
+
 ## Notes
 
 [^1]: I actually reallllly like this idea. This also opens it up for being a defined length. Come back for seven days and you get a little thing at the end. Also reminds me a bit of the [A Series of Questions](https://github.com/mouseandthebillionaire/_sonicCharacteristics) project, but shoot me if I ever try and do audio-export from Unity again. Famous last words!
+
+[^2]: 14:24 in this specific version
+	
