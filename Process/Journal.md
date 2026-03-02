@@ -36,7 +36,7 @@ With this, could there be an alignment on the screen that happens as we get clos
 
 ## 02.28.26 | Alignment Prototype
 
-[Playable Prototype](https://mouseandthebillionaire.github.io/lautir/0.2/)
+[Playable Prototype](https://mouseandthebillionaire.github.io/lautir/0.1/)
 
 ![12 hours from the time](Media/twelveHours.gif)
 
