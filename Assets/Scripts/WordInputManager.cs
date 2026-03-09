@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using TMPro;
@@ -7,7 +8,9 @@ public class WordInputManager : MonoBehaviour {
     public GameObject[] textBoxes;
     public TMP_Text[] letters;
     public GameObject submitButton;
-    
+    [Tooltip("Optional: assign to show saved words on screen for testing persistence (e.g. WebGL / GitHub Pages). Leave empty to disable.")]
+    public TMP_Text debugSavedWordsText;
+
     public string word;
 
     private int keyNum;
@@ -27,6 +30,7 @@ public class WordInputManager : MonoBehaviour {
         } else {
             HideBoxesImmediate();  // Not in correct time at start: don't show at all (no fade)
         }
+        LogAndShowSavedWords("Loaded on Start");
     }
 
     // Update is called once per frame
@@ -74,12 +78,58 @@ public class WordInputManager : MonoBehaviour {
         
     }
 
+    const string SavedWordsKey = "lautir_words";
+    const int SavedWordDaysCount = 7;
+    const char WordSeparator = '\n';
+
+    /// <summary>Load the 7-word array. [0] = first day (oldest), [6] = most recent. Missing/empty = "".</summary>
+    public static string[] LoadWords() {
+        var raw = PlayerPrefs.GetString(SavedWordsKey, "");
+        var parts = raw.Split(WordSeparator);
+        var result = new string[SavedWordDaysCount];
+        for (int i = 0; i < SavedWordDaysCount; i++)
+            result[i] = i < parts.Length ? parts[i] : "";
+        return result;
+    }
+
+    static void SaveWords(string[] words) {
+        PlayerPrefs.SetString(SavedWordsKey, string.Join(WordSeparator.ToString(), words));
+        PlayerPrefs.Save();
+    }
+
     public void EnterWord() {
         for (int i = 0; i < letters.Length; i++) {
             word += letters[i].text;
         }
         Debug.Log(word);
-        
+        var words = LoadWords();
+        for (int i = 0; i < SavedWordDaysCount - 1; i++)
+            words[i] = words[i + 1];
+        words[SavedWordDaysCount - 1] = word;
+        SaveWords(words);
+        LogAndShowSavedWords("After save");
+        GameManager.S.NotifyUserEndedWindow(DateTime.Now);
+        HideBoxes();
+    }
+
+    void LogAndShowSavedWords(string when) {
+        var words = LoadWords();
+        var line = "Saved words " + when + ": [" + string.Join(", ", words) + "]";
+        Debug.Log(line);
+        if (debugSavedWordsText != null)
+            debugSavedWordsText.text = "Last 7 (oldest→newest):\n" + string.Join("\n", words);
+    }
+
+    /// <summary>Most recently saved word (last entry in the array).</summary>
+    public static string GetSavedWord() {
+        var words = LoadWords();
+        return words[SavedWordDaysCount - 1];
+    }
+
+    /// <summary>Word for day index 0..6. 0 = first day (oldest), 6 = most recent. Missed = "".</summary>
+    public static string GetSavedWordForDay(int index) {
+        var words = LoadWords();
+        return index >= 0 && index < SavedWordDaysCount ? words[index] : "";
     }
 
     /// <summary>Fade in. Use when we enter the correct time (at start or while running).</summary>
@@ -93,6 +143,7 @@ public class WordInputManager : MonoBehaviour {
                 img.color = new Color(c.r, c.g, c.b, 0f);
             }
         }
+        // Fade them in
         StartCoroutine(FadeBoxes(1f, 3f));
     }
 
@@ -147,6 +198,13 @@ public class WordInputManager : MonoBehaviour {
             Color c = images[i].color;
             images[i].color = new Color(c.r, c.g, c.b, targetAlpha);
         }
+
+        if(targetAlpha == 0f) {
+            submitButton.SetActive(false);
+            GameManager.S.SetGameAvailable(false);
+        }
     }
+
+
 
 }

@@ -1292,6 +1292,7 @@ MonoBehaviour:
   - {fileID: 530264082}
   - {fileID: 712936323}
   submitButton: {fileID: 1924518865}
+  debugSavedWordsText: {fileID: 0}
   word: 
 --- !u!1 &1535637603
 GameObject:
@@ -1338,9 +1339,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   informationText: {fileID: 204490201}
-  availableHour: 13
-  availableMinute: 12
-  durationMinutes: 1
+  availableHour: 12
+  availableMinute: 0
+  durationMinutes: 5
+  eventMinutes: 2
   enforceTimeWindow: 1
 --- !u!1 &1591090470
 GameObject:

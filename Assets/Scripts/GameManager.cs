@@ -12,9 +12,16 @@ public class GameManager : MonoBehaviour
     public int availableHour = 18;
     public int availableMinute = 0;
     public int durationMinutes = 5;
+    // How long the performed event will last after word entry
+    public int eventMinutes = 2;
 
     public bool enforceTimeWindow = true;
-    public bool IsGameAvailable => !enforceTimeWindow || IsWithinAvailabilityWindow();
+    /// <summary>When set via SetGameAvailable(), overrides the time-window check. Null = use time window.</summary>
+    bool? _gameAvailableOverride;
+    /// <summary>When set, the move-away ramp uses this as "window end" instead of scheduled end (user entered a word).</summary>
+    DateTime? _userWindowEndTime;
+
+    public bool IsGameAvailable => _gameAvailableOverride ?? (!enforceTimeWindow || IsWithinAvailabilityWindow());
 
     bool _wasGameAvailable;
 
@@ -39,6 +46,7 @@ public class GameManager : MonoBehaviour
         if (_wasGameAvailable && !nowAvailable) {
             WordInputManager.S.HideBoxes();  // Exited correct time: fade out
         } else if (!_wasGameAvailable && nowAvailable) {
+            _userWindowEndTime = null;  // New window: clear "user ended" so ramp uses scheduled end next time
             WordInputManager.S.ShowBoxes();  // Entered correct time: fade in
         }
 
@@ -49,8 +57,8 @@ public class GameManager : MonoBehaviour
     {
         var now = DateTime.Now.TimeOfDay;
         var start = new TimeSpan(availableHour, availableMinute, 0);
-        var end = new TimeSpan(availableHour, availableMinute + durationMinutes, 0);
-        return now >= start && now < end;
+        var end = start + TimeSpan.FromMinutes(durationMinutes);
+        return now >= start && now <= end;
     }
 
     /// <summary>Override or call from UI: show message, block input, or load a "come back later" screen.</summary>
@@ -86,7 +94,43 @@ public class GameManager : MonoBehaviour
         return (now - yesterdayEnd).TotalMinutes;
     }
 
+    /// <summary>Call when the user ends the session by entering a word. Move-away ramp will key off this time instead of scheduled window end.</summary>
+    public void NotifyUserEndedWindow(DateTime atTime)
+    {
+        _userWindowEndTime = atTime;
+    }
+
+    /// <summary>Minutes since the effective window end (scheduled end, or word-entry + eventMinutes when user entered a word). 0 if still in window/event.</summary>
+    public double MinutesSinceEffectiveWindowEnd()
+    {
+        if (IsGameAvailable) return 0;
+        if (_userWindowEndTime.HasValue)
+        {
+            var effectiveEnd = _userWindowEndTime.Value.AddMinutes(eventMinutes);
+            var since = (DateTime.Now - effectiveEnd).TotalMinutes;
+            return since > 0 ? since : 0;  // 0 while still in the event window
+        }
+        return MinutesSinceAvailableEnded();
+    }
+
+    /// <summary>Effective window end as minutes from midnight (for ramp curve). When user entered a word, this is word-entry time + eventMinutes.</summary>
+    public double GetEffectiveWindowEndMinutesSinceMidnight()
+    {
+        if (_userWindowEndTime.HasValue)
+        {
+            var effectiveEnd = _userWindowEndTime.Value.AddMinutes(eventMinutes);
+            return effectiveEnd.TimeOfDay.TotalMinutes;
+        }
+        var now = DateTime.Now;
+        var scheduledEnd = new DateTime(now.Year, now.Month, now.Day, availableHour, availableMinute, 0).AddMinutes(durationMinutes);
+        return scheduledEnd.TimeOfDay.TotalMinutes;
+    }
+
     private void GetTextInput(){
         informationText.text = "begin";
+    }
+
+    public void SetGameAvailable(bool available) {
+        _gameAvailableOverride = available;
     }
 }

@@ -92,14 +92,15 @@ public class BackgroundObject : MonoBehaviour
         float t; // 1 = home, 0 = away
         if (minutes >= HalfCycleMinutes)
         {
-            // Move-away leg: home to away. Ramp-out keyed to when the home window ENDS (durationMinutes), not 1440.
+            // Move-away leg: home to away. Ramp keyed to effective window end (scheduled end or when user entered a word).
             float raw = Mathf.Clamp01((minutes - HalfCycleMinutes) / HalfCycleMinutes); // 0 at 720, 1 at 1440
             float tCurve = 1f - Mathf.Pow(1f - raw, approachCurvePower);
-            float minutesSinceEnd = (float)GameManager.S.MinutesSinceAvailableEnded();
+            float minutesSinceEnd = (float)GameManager.S.MinutesSinceEffectiveWindowEnd();
             if (minutesSinceEnd <= MoveAwayRampMinutes && MoveAwayRampMinutes > 0f)
             {
-                // Ease out from home over first 2 min after availability window ends
-                float minutesAtRampEnd = 1440f - GameManager.S.durationMinutes - MoveAwayRampMinutes;
+                // Ease out from home over first 2 min after effective window end (scheduled or word-entry time)
+                double effectiveEndMin = GameManager.S.GetEffectiveWindowEndMinutesSinceMidnight();
+                float minutesAtRampEnd = 1440f - (float)effectiveEndMin - MoveAwayRampMinutes;
                 float rawAtRampEnd = Mathf.Clamp01((minutesAtRampEnd - HalfCycleMinutes) / HalfCycleMinutes);
                 float tAtRampEnd = 1f - Mathf.Pow(1f - rawAtRampEnd, approachCurvePower);
                 float rampT = minutesSinceEnd / MoveAwayRampMinutes; // 0 when window just ended, 1 at 2 min after
