@@ -42,6 +42,9 @@ public class WordInputManager : MonoBehaviour {
             }
             else {
                 submitButton.SetActive(true);
+                if(Input.GetKeyDown(KeyCode.Return)) {
+                    EnterWord();
+                }   
             }
         }
         
