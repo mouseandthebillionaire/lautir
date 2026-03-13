@@ -50,6 +50,12 @@ I really like this idea of alignment serving as a visual cue to when the interac
 
 Rudolf Otto's term "numinous" from _[The Idea of the Holy](https://archive.org/details/in.ernet.dli.2015.262513)_ also cropped up in this search which is something that I haven't thought about in a while. Not sure if it's going to play into this piece or the greater PhD ideas, but definitely something to chew on for a bit.
 
+## 03.12.26 | A Week of Words
+
+As mentioned in my [last commit](https://github.com/mouseandthebillionaire/lautir/commit/29deace38821fc53a81ccd4e66e837b54fcacca2), my intention this week was to visit the site every day at noon and enter a word to see how it felt. Total failure. I missed the first day! And then only remembered to do it ONE other day. Obviously this does not bode well for the project, haha. Partially we can chalk this up to a currently boring interaction that doesn't encourage excitement, but also, it's hard to fit something like this in your day. And a five minute window might be too short? ND mentioned [BeReal](https://bereal.com/) as a precedent (which also brings to mind the [Memento Mori](https://petitsmots.app/) app), and these made me think that a push alert might be a good addition. I have no interest in building a dedicated phone app, but I wonder if implementing a .ical file download that sets a reminder for you is a good solution? You could even link out to the page from the event?
+
+So, with all that, I will work on getting that up and running by Monday and try again!
+
 ## Notes
 
 [^1]: I actually reallllly like this idea. This also opens it up for being a defined length. Come back for seven days and you get a little thing at the end. Also reminds me a bit of the [A Series of Questions](https://github.com/mouseandthebillionaire/_sonicCharacteristics) project, but shoot me if I ever try and do audio-export from Unity again. Famous last words!
