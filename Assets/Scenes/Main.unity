@@ -1937,8 +1937,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   informationText: {fileID: 204490201}
-  availableHour: 15
-  availableMinute: 45
+  availableHour: 12
+  availableMinute: 0
   durationMinutes: 10
   eventMinutes: 2
   enforceTimeWindow: 1
