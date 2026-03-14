@@ -38,16 +38,16 @@ public class GameManager : MonoBehaviour
 
         if (nowAvailable) {
             GetTextInput();
+            WordInputManager.S.ShowInputField();
         } else {
             OnOutsideAvailabilityWindow();
+            WordInputManager.S.HideInputField();
         }
 
         // Only show/hide on transition into or out of the time window
         if (_wasGameAvailable && !nowAvailable) {
-            WordInputManager.S.HideBoxes();  // Exited correct time: fade out
         } else if (!_wasGameAvailable && nowAvailable) {
             _userWindowEndTime = null;  // New window: clear "user ended" so ramp uses scheduled end next time
-            WordInputManager.S.ShowBoxes();  // Entered correct time: fade in
         }
 
         _wasGameAvailable = nowAvailable;
@@ -100,27 +100,23 @@ public class GameManager : MonoBehaviour
         _userWindowEndTime = atTime;
     }
 
-    /// <summary>Minutes since the effective window end (scheduled end, or word-entry + eventMinutes when user entered a word). 0 if still in window/event.</summary>
+    /// <summary>Minutes since the effective window end (scheduled end, or word-entry when user entered a word). 0 if still in window. Circles use this to start moving away.</summary>
     public double MinutesSinceEffectiveWindowEnd()
     {
         if (IsGameAvailable) return 0;
         if (_userWindowEndTime.HasValue)
         {
-            var effectiveEnd = _userWindowEndTime.Value.AddMinutes(eventMinutes);
-            var since = (DateTime.Now - effectiveEnd).TotalMinutes;
-            return since > 0 ? since : 0;  // 0 while still in the event window
+            var since = (DateTime.Now - _userWindowEndTime.Value).TotalMinutes;
+            return since > 0 ? since : 0;
         }
         return MinutesSinceAvailableEnded();
     }
 
-    /// <summary>Effective window end as minutes from midnight (for ramp curve). When user entered a word, this is word-entry time + eventMinutes.</summary>
+    /// <summary>Effective window end as minutes from midnight (for ramp curve). When user entered a word, this is word-entry time so circles move away immediately.</summary>
     public double GetEffectiveWindowEndMinutesSinceMidnight()
     {
         if (_userWindowEndTime.HasValue)
-        {
-            var effectiveEnd = _userWindowEndTime.Value.AddMinutes(eventMinutes);
-            return effectiveEnd.TimeOfDay.TotalMinutes;
-        }
+            return _userWindowEndTime.Value.TimeOfDay.TotalMinutes;
         var now = DateTime.Now;
         var scheduledEnd = new DateTime(now.Year, now.Month, now.Day, availableHour, availableMinute, 0).AddMinutes(durationMinutes);
         return scheduledEnd.TimeOfDay.TotalMinutes;
