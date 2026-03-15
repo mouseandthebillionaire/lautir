@@ -66,7 +66,7 @@ public class GameManager : MonoBehaviour
     {
         //informationText.text = $"only available between {availableHour:D2}:{availableMinute:D2} and {availableHour:D2}:{availableMinute + durationMinutes:D2}. \n please come back later.";
         // TODO: e.g. show UI panel, disable player input, or load a "come back later" scene
-        informationText.text = "";
+        // informationText.text = "";
     }
 
     /// <summary>Minutes until the game becomes available (0 if already available).</summary>

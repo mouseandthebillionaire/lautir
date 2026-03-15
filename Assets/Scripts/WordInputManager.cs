@@ -16,10 +16,12 @@ public class WordInputManager : MonoBehaviour {
 
     public static WordInputManager S;
 
-    void Awake(){
+    void Awake() {
         S = this;
+        if (inputField != null)
+            inputField.gameObject.SetActive(false);
     }
-    
+
     const int MaxWordLength = 6;
 
     void Start() {
@@ -31,8 +33,6 @@ public class WordInputManager : MonoBehaviour {
         Reset();
         if (GameManager.S != null && GameManager.S.IsGameAvailable) {
             ShowInputField();
-        } else {
-            HideInputField();
         }
         LogAndShowSavedWords("Loaded on Start");
     }
@@ -59,19 +59,40 @@ public class WordInputManager : MonoBehaviour {
         }
     }
 
-    public void ShowInputField() {
-        if (inputField != null) {
-            inputField.gameObject.SetActive(true);
-        }
-    }
-    
+    public float showFadeDuration = 0.5f;
     public float hideFadeDuration = 0.5f;
 
-    public void HideInputField() {
+    public void ShowInputField() {
         if (inputField == null) return;
-        Debug.Log("Hiding Input Field");
+        StopAllCoroutines();
+        inputField.gameObject.SetActive(true);
+        StartCoroutine(FadeInInput());
+    }
+
+    public void HideInputFieldImmediate() {
+        if (inputField == null) return;
+        StopAllCoroutines();
+        inputField.gameObject.SetActive(false);
+    }
+
+    public void HideInputField() {
+        if (inputField == null || !inputField.gameObject.activeSelf) return;
         StopAllCoroutines();
         StartCoroutine(FadeOutAndHideInput());
+    }
+
+    IEnumerator FadeInInput() {
+        var go = inputField.gameObject;
+        var cg = go.GetComponent<CanvasGroup>();
+        if (cg == null) cg = go.AddComponent<CanvasGroup>();
+        cg.alpha = 0f;
+        float elapsed = 0f;
+        while (elapsed < showFadeDuration) {
+            elapsed += Time.deltaTime;
+            cg.alpha = Mathf.Clamp01(elapsed / showFadeDuration);
+            yield return null;
+        }
+        cg.alpha = 1f;
     }
 
     IEnumerator FadeOutAndHideInput() {
