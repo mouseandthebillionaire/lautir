@@ -1,4 +1,6 @@
 mergeInto(LibraryManager.library, {
+    WebGLDownloadIcs__sig: 'vii',
+    WebGLDownloadIcs__proxy: 'sync',
     WebGLDownloadIcs: function (filenamePtr, contentPtr) {
         var filename = UTF8ToString(filenamePtr);
         var content = UTF8ToString(contentPtr);

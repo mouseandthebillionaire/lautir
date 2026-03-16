@@ -31,23 +31,29 @@ public class GameManager : MonoBehaviour
 
     void Start() {
         _wasGameAvailable = IsGameAvailable;  // So we don't trigger enter/exit on first Update
+        // Ensure input field is shown immediately if the game starts in an available state,
+        // regardless of script execution order.
+        if (_wasGameAvailable && WordInputManager.S != null)
+        {
+            WordInputManager.S.ShowInputField();
+        }
     }
 
     void Update() {
         bool nowAvailable = IsGameAvailable;
 
-        if (nowAvailable) {
+        // Only show/hide and update state on transition into or out of the time window
+        if (!_wasGameAvailable && nowAvailable) {
+            // Just transitioned into availability window
             GetTextInput();
-            WordInputManager.S.ShowInputField();
-        } else {
-            OnOutsideAvailabilityWindow();
-            WordInputManager.S.HideInputField();
-        }
-
-        // Only show/hide on transition into or out of the time window
-        if (_wasGameAvailable && !nowAvailable) {
-        } else if (!_wasGameAvailable && nowAvailable) {
+            if (WordInputManager.S != null)
+                WordInputManager.S.ShowInputField();
             _userWindowEndTime = null;  // New window: clear "user ended" so ramp uses scheduled end next time
+        } else if (_wasGameAvailable && !nowAvailable) {
+            // Just transitioned out of availability window
+            OnOutsideAvailabilityWindow();
+            if (WordInputManager.S != null)
+                WordInputManager.S.HideInputField();
         }
 
         _wasGameAvailable = nowAvailable;
@@ -123,7 +129,7 @@ public class GameManager : MonoBehaviour
     }
 
     private void GetTextInput(){
-        informationText.text = "begin";
+        // informationText.text = "begin";
     }
 
     public void SetGameAvailable(bool available) {
