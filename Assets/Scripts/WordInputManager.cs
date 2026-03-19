@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
@@ -13,6 +14,48 @@ public class WordInputManager : MonoBehaviour {
     public TMP_InputField inputField;
     public GameObject submitButton;
     public string word;
+    const int MaxWordLength = 6;
+
+    // Saving Words
+    const string SavedWordsKey = "lautir_words";
+    const int SavedWordDaysCount = 6;
+    const char WordSeparator = '\n';
+
+    public List<string> words;
+
+    // Load the 6-word array. [0] = oldest, [5] = most recent. Missing/empty = ""
+    public static List<string> LoadWords() {
+        var raw = PlayerPrefs.GetString(SavedWordsKey, "");
+        var result = new List<string>(SavedWordDaysCount);
+        for (int i = 0; i < SavedWordDaysCount; i++) result.Add("");
+
+        if (!string.IsNullOrEmpty(raw)) {
+            var parts = raw.Split(WordSeparator);
+            for (int i = 0; i < SavedWordDaysCount && i < parts.Length; i++) {
+                result[i] = parts[i] ?? "";
+            }
+        }
+        return result;
+    }   
+
+    static void AddWordToSlots(List<string> slots, string newWord) {
+        if (slots == null) return;
+
+        // Ensure fixed length
+        while (slots.Count < SavedWordDaysCount) slots.Add("");
+        while (slots.Count > SavedWordDaysCount) slots.RemoveAt(0);
+
+        for (int i = 0; i < slots.Count; i++) {
+            if (string.IsNullOrEmpty(slots[i])) {
+                slots[i] = newWord;
+                return;
+            }
+        }
+
+        // All slots are full: shift left and append newest
+        slots.RemoveAt(0);
+        slots.Add(newWord);
+    }
 
     public static WordInputManager S;
 
@@ -22,14 +65,13 @@ public class WordInputManager : MonoBehaviour {
             inputField.gameObject.SetActive(false);
     }
 
-    const int MaxWordLength = 6;
-
     void Start() {
         if (inputField != null) {
             inputField.characterLimit = MaxWordLength;
-            inputField.onValueChanged.AddListener(ClampInputToMaxLength);
+            inputField.onValueChanged.AddListener(OnInputValueChanged);
             inputField.onEndEdit.AddListener(OnInputSubmit);
         }
+        words = LoadWords();
         Reset();
         if (GameManager.S != null && GameManager.S.IsGameAvailable) {
             ShowInputField();
@@ -37,9 +79,20 @@ public class WordInputManager : MonoBehaviour {
         LogAndShowSavedWords("Loaded on Start");
     }
 
-    void ClampInputToMaxLength(string value) {
-        if (inputField == null || value.Length <= MaxWordLength) return;
-        inputField.text = value.Substring(0, MaxWordLength);
+    void OnInputValueChanged(string value) {
+        if (inputField == null) return;
+
+        // TMP can get its caret/focus disrupted if we rewrite `inputField.text`
+        // every frame. Only normalize when the user edits.
+        var normalized = (value ?? "").ToUpperInvariant();
+        if (normalized.Length > MaxWordLength) {
+            normalized = normalized.Substring(0, MaxWordLength);
+        }
+
+        if (!string.Equals(normalized, value, StringComparison.Ordinal)) {
+            // Avoid re-triggering onValueChanged.
+            inputField.SetTextWithoutNotify(normalized);
+        }
     }
 
     void OnInputSubmit(string value) {
@@ -49,15 +102,7 @@ public class WordInputManager : MonoBehaviour {
             EnterWord();
     }
 
-    // Update is called once per frame
-    void Update() {
-        if (GameManager.S.IsGameAvailable) {
-            // allow typing in input field
-            if (inputField != null) {
-                inputField.text = inputField.text.ToUpper();
-            }
-        }
-    }
+    // Intentionally no per-frame input rewriting.
 
     public float showFadeDuration = 0.5f;
     public float hideFadeDuration = 0.5f;
@@ -66,6 +111,8 @@ public class WordInputManager : MonoBehaviour {
         if (inputField == null) return;
         StopAllCoroutines();
         inputField.gameObject.SetActive(true);
+        // Ensure the input receives focus so the caret appears.
+        inputField.ActivateInputField();
         StartCoroutine(FadeInInput());
     }
 
@@ -114,44 +161,37 @@ public class WordInputManager : MonoBehaviour {
         // not sure what to reset with inputField
     }
 
-    // Saving Words
-    const string SavedWordsKey = "lautir_words";
-    const int SavedWordDaysCount = 6;
-    const char WordSeparator = '\n';
+    public void SaveWords(string[] _words) {
+        // Persist exactly SavedWordDaysCount slots to keep indices stable.
+        var slots = new List<string>(_words ?? Array.Empty<string>());
+        while (slots.Count < SavedWordDaysCount) slots.Add("");
+        if (slots.Count > SavedWordDaysCount) slots = slots.GetRange(slots.Count - SavedWordDaysCount, SavedWordDaysCount);
 
-    // Load the 6-word array. [0] = first day (oldest), [6] = most recent. Missing/empty = ""
-    public static string[] LoadWords() {
-        var raw = PlayerPrefs.GetString(SavedWordsKey, "");
-        var parts = raw.Split(WordSeparator);
-        var result = new string[SavedWordDaysCount];
-        for (int i = 0; i < SavedWordDaysCount; i++) {
-            result[i] = i < parts.Length ? parts[i] : "";
-        }
-        return result;
-    }   
-
-    public static void SaveWords(string[] words) {
-        PlayerPrefs.SetString(SavedWordsKey, string.Join(WordSeparator.ToString(), words));
+        PlayerPrefs.SetString(SavedWordsKey, string.Join(WordSeparator.ToString(), slots));
         PlayerPrefs.Save();
+    }
+
+    [ContextMenu("Clear Saved Words (PlayerPrefs)")]
+    public void ClearSavedWords() {
+        PlayerPrefs.DeleteKey(SavedWordsKey);
+        PlayerPrefs.Save();
+        words = LoadWords();
+        LogAndShowSavedWords("Cleared");
     }
 
     public void EnterWord() {
         if (inputField != null) {
             word = inputField.text;
         }
-        Debug.Log(word);
-        var words = LoadWords();
-        for (int i = 0; i < SavedWordDaysCount - 1; i++) {
-            words[i] = words[i + 1];
-        }
-        words[SavedWordDaysCount - 1] = word;
-        SaveWords(words);
+        AddWordToSlots(words, word);
+        SaveWords(words.ToArray());
+        LogAndShowSavedWords("EnterWord");
         GameManager.S.NotifyUserEndedWindow(DateTime.Now);
         GameManager.S.SetGameAvailable(false);
         HideInputField();
     }
 
-    void LogAndShowSavedWords(string when) {
+    public void LogAndShowSavedWords(string when) {
         var words = LoadWords();
         var line = "Saved words " + when + ": [" + string.Join(", ", words) + "]";
         Debug.Log(line);
