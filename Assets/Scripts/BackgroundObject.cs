@@ -38,6 +38,7 @@ public class BackgroundObject : MonoBehaviour
     void Start()
     {
         InitializeAnimation();
+        SetHomeValues();
         SetAwayValues();
         InvokeRepeating("MoveHome", 0f, 0.5f);
     }
@@ -67,6 +68,12 @@ public class BackgroundObject : MonoBehaviour
         if (shader != null)
             sr.material = new Material(shader);
         // If shader not found (e.g. not in WebGL build), sprites keep default blend; add to Graphics > Always Included Shaders or assign above
+    }
+
+    void SetHomeValues() {
+        float randOffset = Random.Range(0.1f, 0.1f);
+        properLoc[0] += randOffset;
+        properLoc[1] += randOffset;
     }
 
     void SetAwayValues()

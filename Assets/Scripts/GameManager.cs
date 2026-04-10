@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 using TMPro;
+using Random = UnityEngine.Random;
 
 public class GameManager : MonoBehaviour
 {
@@ -11,25 +12,29 @@ public class GameManager : MonoBehaviour
     
     public int availableHour = 18;
     public int availableMinute = 0;
+    public int secondsAdjustment = 0;
     public int durationMinutes = 5;
     // How long the performed event will last after word entry
     public int eventMinutes = 2;
 
     public bool enforceTimeWindow = true;
-    /// <summary>When set via SetGameAvailable(), overrides the time-window check. Null = use time window.</summary>
     bool? _gameAvailableOverride;
-    /// <summary>When set, the move-away ramp uses this as "window end" instead of scheduled end (user entered a word).</summary>
     DateTime? _userWindowEndTime;
 
     public bool IsGameAvailable => _gameAvailableOverride ?? (!enforceTimeWindow || IsWithinAvailabilityWindow());
 
     bool _wasGameAvailable;
 
+    public float startTime;
+
     void Awake() {
         S = this;
     }
 
     void Start() {
+        // Randomly adjust available seconds so that the start time is somehwere within a 5 minute window
+        secondsAdjustment = UnityEngine.Random.Range(0, 300);
+
         _wasGameAvailable = IsGameAvailable;  // So we don't trigger enter/exit on first Update
         // Ensure input field is shown immediately if the game starts in an available state,
         // regardless of script execution order.
@@ -37,6 +42,7 @@ public class GameManager : MonoBehaviour
         {
             WordInputManager.S.ShowInputField();
         }
+
     }
 
     void Update() {
@@ -50,8 +56,6 @@ public class GameManager : MonoBehaviour
                 WordInputManager.S.ShowInputField();
             _userWindowEndTime = null;  // New window: clear "user ended" so ramp uses scheduled end next time
         } else if (_wasGameAvailable && !nowAvailable) {
-            // Just transitioned out of availability window
-            OnOutsideAvailabilityWindow();
             if (WordInputManager.S != null)
                 WordInputManager.S.HideInputField();
         }
@@ -62,17 +66,9 @@ public class GameManager : MonoBehaviour
     bool IsWithinAvailabilityWindow()
     {
         var now = DateTime.Now.TimeOfDay;
-        var start = new TimeSpan(availableHour, availableMinute, 0);
+        var start = new TimeSpan(availableHour, availableMinute, secondsAdjustment);
         var end = start + TimeSpan.FromMinutes(durationMinutes);
         return now >= start && now <= end;
-    }
-
-    /// <summary>Override or call from UI: show message, block input, or load a "come back later" screen.</summary>
-    protected virtual void OnOutsideAvailabilityWindow()
-    {
-        //informationText.text = $"only available between {availableHour:D2}:{availableMinute:D2} and {availableHour:D2}:{availableMinute + durationMinutes:D2}. \n please come back later.";
-        // TODO: e.g. show UI panel, disable player input, or load a "come back later" scene
-        // informationText.text = "";
     }
 
     /// <summary>Minutes until the game becomes available (0 if already available).</summary>
@@ -80,7 +76,7 @@ public class GameManager : MonoBehaviour
     {
         if (IsGameAvailable) return 0;
         var now = DateTime.Now;
-        var todayStart = new DateTime(now.Year, now.Month, now.Day, availableHour, availableMinute, 0);
+        var todayStart = new DateTime(now.Year, now.Month, now.Day, availableHour, availableMinute, 0).AddSeconds(secondsAdjustment);
         if (now < todayStart)
             return (todayStart - now).TotalMinutes;
         var tomorrowStart = todayStart.AddDays(1);
@@ -92,7 +88,7 @@ public class GameManager : MonoBehaviour
     {
         if (IsGameAvailable) return 0;
         var now = DateTime.Now;
-        var todayStart = new DateTime(now.Year, now.Month, now.Day, availableHour, availableMinute, 0);
+        var todayStart = new DateTime(now.Year, now.Month, now.Day, availableHour, availableMinute, 0).AddSeconds(secondsAdjustment);
         var windowEnd = todayStart.AddMinutes(durationMinutes);
         if (now >= windowEnd)
             return (now - windowEnd).TotalMinutes;
@@ -124,7 +120,7 @@ public class GameManager : MonoBehaviour
         if (_userWindowEndTime.HasValue)
             return _userWindowEndTime.Value.TimeOfDay.TotalMinutes;
         var now = DateTime.Now;
-        var scheduledEnd = new DateTime(now.Year, now.Month, now.Day, availableHour, availableMinute, 0).AddMinutes(durationMinutes);
+        var scheduledEnd = new DateTime(now.Year, now.Month, now.Day, availableHour, availableMinute, 0).AddSeconds(secondsAdjustment).AddMinutes(durationMinutes);
         return scheduledEnd.TimeOfDay.TotalMinutes;
     }
 

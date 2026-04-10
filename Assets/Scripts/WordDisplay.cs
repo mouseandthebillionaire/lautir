@@ -7,9 +7,12 @@ public class WordDisplay : MonoBehaviour
     private TMP_Text wordText;
     private List<string> words;
 
+    public static WordDisplay S;
+    
     void Awake()
     {
         wordText = GetComponent<TMP_Text>();
+        S = this;
     }
     
     
@@ -21,8 +24,9 @@ public class WordDisplay : MonoBehaviour
         DisplayWords();
     }
 
+
     // Update is called once per frame
-    void DisplayWords()
+    public void DisplayWords()
     {
         words = WordInputManager.LoadWords();
      

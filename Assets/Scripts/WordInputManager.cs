@@ -186,6 +186,7 @@ public class WordInputManager : MonoBehaviour {
         AddWordToSlots(words, word);
         SaveWords(words.ToArray());
         LogAndShowSavedWords("EnterWord");
+        WordDisplay.S.DisplayWords();
         GameManager.S.NotifyUserEndedWindow(DateTime.Now);
         GameManager.S.SetGameAvailable(false);
         HideInputField();
