@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>New Unity Project</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+    #unity-container {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      left: 0;
+      top: 0;
+      background: ##1F1F20;
+    }
+    #unity-canvas {
+      width: 100%;
+      height: 100%;
+      background: ##1F1F20;
+    }
+    #unity-loading-bar {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      display: none;
+    }
+    #unity-progress-bar-empty {
+      width: 200px;
+      height: 8px;
+      margin-top: 10px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    #unity-progress-bar-full {
+      width: 0%;
+      height: 100%;
+      background: rgba(255,255,255,0.8);
+      border-radius: 4px;
+      transition: width 0.1s;
+    }
+    #unity-footer { position: absolute; bottom: 10px; width: 100%; text-align: center; }
+
+    #info-btn {
+      position: fixed; top: 12px; right: 12px; z-index: 10001;
+      width: 32px; height: 32px; border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.5); background: rgba(0,0,0,0.3);
+      color: #fff; font: 18px/1 sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+    #info-btn:hover { background: rgba(0,0,0,0.5); }
+
+    #info-overlay {
+      display: none; position: fixed; inset: 0; z-index: 10000;
+      background: rgba(0,0,0,0.5); align-items: center; justify-content: center;
+    }
+    #info-overlay.show { display: flex; }
+    #info-modal {
+      background: #1a1a1a; color: #eee; max-width: 420px; max-height: 80vh; overflow: auto;
+      padding: 20px; border-radius: 8px; position: relative; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+    #info-modal h2 { font: 16px/1.3 sans-serif; margin-bottom: 12px; }
+    #info-modal p { font: 14px/1.5 sans-serif; margin-bottom: 10px; color: #ccc; }
+    #calendar-btn {
+      margin-top: 8px;
+      display: inline-block;
+      padding: 10px 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      font: 14px/1 sans-serif;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    #calendar-btn:hover { background: rgba(255,255,255,0.18); }
+    #info-close {
+      position: absolute; top: 10px; right: 10px;
+      width: 28px; height: 28px; border: none; border-radius: 4px;
+      background: rgba(255,255,255,0.15); color: #fff; font: 18px/1 sans-serif; cursor: pointer;
+    }
+    #info-close:hover { background: rgba(255,255,255,0.25); }
+  </style>
+</head>
+<body>
+  <button type="button" id="info-btn" aria-label="About">?</button>
+  <div id="info-overlay" role="dialog" aria-label="About this project">
+    <div id="info-modal">
+      <button type="button" id="info-close" aria-label="Close">&times;</button>
+      <h2>About LAUTIR</h2>
+      <p>This is a daily experience. Enter one six-letter word between 12 and 12:10pm each day. The project explores time, presence, and ritual.</p>
+      <button type="button" id="calendar-btn">Add daily noon reminder (6 days)</button>
+    </div>
+  </div>
+  <div id="unity-container">
+    <canvas id="unity-canvas"></canvas>
+    <div id="unity-loading-bar">
+      <div id="unity-progress-bar-empty">
+        <div id="unity-progress-bar-full"></div>
+      </div>
+    </div>
+  </div>
+  <div id="unity-footer">
+  </div>
+  <script>
+    (function() {
+      var btn = document.getElementById("info-btn");
+      var overlay = document.getElementById("info-overlay");
+      var closeBtn = document.getElementById("info-close");
+      if (btn) btn.addEventListener("click", function() { overlay.classList.add("show"); });
+      if (closeBtn) closeBtn.addEventListener("click", function() { overlay.classList.remove("show"); });
+      if (overlay) overlay.addEventListener("click", function(e) { if (e.target === overlay) overlay.classList.remove("show"); });
+
+      // Calendar reminder download (client-side .ics)
+      var calendarBtn = document.getElementById("calendar-btn");
+      var GAME_URL = "https://mouseandthebillionaire.github.io/lautir/0.2/";
+      var START_HOUR = 12;         // noon
+      var START_MINUTE = 0;
+      var DURATION_MINUTES = 10;   // change if your window changes
+      var DAYS_COUNT = 6;          // total occurrences
+
+      function pad2(n) { return n < 10 ? ("0" + n) : ("" + n); }
+      function formatLocal(dt) {
+        return "" + dt.getFullYear() + pad2(dt.getMonth() + 1) + pad2(dt.getDate()) +
+          "T" + pad2(dt.getHours()) + pad2(dt.getMinutes()) + pad2(dt.getSeconds());
+      }
+      function formatUtc(dt) {
+        return "" + dt.getUTCFullYear() + pad2(dt.getUTCMonth() + 1) + pad2(dt.getUTCDate()) +
+          "T" + pad2(dt.getUTCHours()) + pad2(dt.getUTCMinutes()) + pad2(dt.getUTCSeconds()) + "Z";
+      }
+      function escapeIcsText(s) {
+        return (s || "").replace(/\\\\/g, "\\\\\\\\").replace(/;/g, "\\\\;").replace(/,/g, "\\\\,");
+      }
+      function buildIcs(startLocal, endLocal) {
+        var uid = "lautir-" + Math.random().toString(16).slice(2) + "-" + Date.now() + "@lautir";
+        var dtstamp = formatUtc(new Date());
+        var lines = [
+          "BEGIN:VCALENDAR",
+          "VERSION:2.0",
+          "PRODID:-//LAUTIR//Reminder//EN",
+          "BEGIN:VEVENT",
+          "UID:" + uid,
+          "DTSTAMP:" + dtstamp,
+          "DTSTART:" + formatLocal(startLocal),
+          "DTEND:" + formatLocal(endLocal),
+          "RRULE:FREQ=DAILY;COUNT=" + DAYS_COUNT,
+          "SUMMARY:LAUTIR",
+          "DESCRIPTION:" + escapeIcsText("LAUTIR - " + GAME_URL),
+          "URL:" + GAME_URL,
+          "END:VEVENT",
+          "END:VCALENDAR"
+        ];
+        return lines.join("\r\n") + "\r\n";
+      }
+      function downloadText(filename, content) {
+        var blob = new Blob([content], { type: "text/calendar;charset=utf-8" });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+      function nextNoon() {
+        var now = new Date();
+        var start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), START_HOUR, START_MINUTE, 0);
+        if (now > start) start.setDate(start.getDate() + 1);
+        return start;
+      }
+
+      if (calendarBtn) calendarBtn.addEventListener("click", function() {
+        var start = nextNoon();
+        var end = new Date(start.getTime() + DURATION_MINUTES * 60 * 1000);
+        var ics = buildIcs(start, end);
+        downloadText("lautir-reminder.ics", ics);
+      });
+    })();
+    var buildUrl = "Build";
+    var loaderUrl = buildUrl + "/melodyTest.loader.js";
+    var script = document.createElement("script");
+    script.src = loaderUrl;
+    script.onload = function () {
+      createUnityInstance(document.querySelector("#unity-canvas"), {
+        dataUrl: buildUrl + "/melodyTest.data",
+        frameworkUrl: buildUrl + "/melodyTest.framework.js",
+        codeUrl: buildUrl + "/melodyTest.wasm",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "DefaultCompany",
+        //productName: "New Unity Project",
+        //productVersion: "1.0",
+      }, function (progress) {
+        var progressBarFull = document.querySelector("#unity-progress-bar-full");
+        progressBarFull.style.width = 100 * progress + "%";
+      }).then(function (unityInstance) {
+        document.querySelector("#unity-loading-bar").style.display = "none";
+      }).catch(function (message) {
+        alert(message);
+      });
+    };
+    document.body.appendChild(script);
+  </script>
+</body>
+</html>

@@ -1,26 +1,22 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using UnityEngine;
 
+/// <summary>
+/// Builds a small .ics (6 daily alarms) and downloads it (WebGL) or saves + opens (editor / desktop).
+/// </summary>
 public class ReminderManager : MonoBehaviour
 {
     public string gameUrl = "https://mouseandthebillionaire.github.io/lautir/0.2/";
 
     public int availableHour = 12;
-    public int availableDuration = 5;    
+    public int availableDuration = 5;
 
-    /// <summary>
-    /// Creates an .ics (iCalendar) event starting at the next available hour,
-    /// repeating daily for 5 occurrences, and triggers a download/open of the file.
-    /// </summary>
-    /// 
     public void DownloadReminder()
     {
         var now = DateTime.Now;
-        // Next occurrence of availableHour (today or tomorrow if that hour has passed)
+        // Next occurrence of availableHour (tomorrow if that time already passed today).
         var start = new DateTime(now.Year, now.Month, now.Day, availableHour, 0, 0, DateTimeKind.Local);
         if (now >= start)
             start = start.AddDays(1);
@@ -30,10 +26,8 @@ public class ReminderManager : MonoBehaviour
         string ics = BuildIcal(start, end, gameUrl);
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-        // In WebGL, trigger a browser download using the JS plugin (Blob + anchor click).
         WebGLDownloadIcs("lautirReminder.ics", ics);
 #else
-        // In editor / standalone, write to disk and reveal/open.
         string path = Path.Combine(Application.persistentDataPath, "lautirReminder.ics");
         File.WriteAllText(path, ics);
 
@@ -77,8 +71,8 @@ public class ReminderManager : MonoBehaviour
             "END:VEVENT\r\n" +
             "END:VCALENDAR\r\n";
     }
-    #if UNITY_WEBGL && !UNITY_EDITOR
+#if UNITY_WEBGL && !UNITY_EDITOR
     [DllImport("__Internal")]
     private static extern void WebGLDownloadIcs(string filename, string content);
-    #endif
+#endif
 }

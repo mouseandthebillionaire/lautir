@@ -3,22 +3,26 @@ using System;
 using TMPro;
 using Random = UnityEngine.Random;
 
+/// <summary>
+/// Daily availability window, input visibility, and a 0–1 "home" blend for visuals / audio easing.
+/// </summary>
 public class GameManager : MonoBehaviour
 {
-
     public static GameManager S;
-    
-    public TMP_Text informationText;    
-    
+
+    public TMP_Text informationText;
+
     public int availableHour = 18;
     public int availableMinute = 0;
+    /// <summary>Random 0–299 s so the window start varies slightly each run.</summary>
     public int secondsAdjustment = 0;
     public int durationMinutes = 5;
-    // How long the performed event will last after word entry
+    /// <summary>Minutes used to ease toward / away from the window in <see cref="GetAvailabilityHomeBlend"/>.</summary>
     public int eventMinutes = 2;
 
     public bool enforceTimeWindow = true;
     bool? _gameAvailableOverride;
+    /// <summary>Set when the user submits a word so the "away" ramp can use that moment.</summary>
     DateTime? _userWindowEndTime;
 
     public bool IsGameAvailable => _gameAvailableOverride ?? (!enforceTimeWindow || IsWithinAvailabilityWindow());
@@ -27,35 +31,32 @@ public class GameManager : MonoBehaviour
 
     public float startTime;
 
-    void Awake() {
+    void Awake()
+    {
         S = this;
     }
 
-    void Start() {
-        // Randomly adjust available seconds so that the start time is somehwere within a 5 minute window
-        secondsAdjustment = UnityEngine.Random.Range(0, 300);
-
-        _wasGameAvailable = IsGameAvailable;  // So we don't trigger enter/exit on first Update
-        // Ensure input field is shown immediately if the game starts in an available state,
-        // regardless of script execution order.
+    void Start()
+    {
+        secondsAdjustment = Random.Range(0, 300);
+        _wasGameAvailable = IsGameAvailable;
+        // Show input immediately if we boot already inside the window (any script order).
         if (_wasGameAvailable && WordInputManager.S != null)
-        {
             WordInputManager.S.ShowInputField();
-        }
-
     }
 
-    void Update() {
+    void Update()
+    {
         bool nowAvailable = IsGameAvailable;
 
-        // Only show/hide and update state on transition into or out of the time window
-        if (!_wasGameAvailable && nowAvailable) {
-            // Just transitioned into availability window
-            GetTextInput();
+        if (!_wasGameAvailable && nowAvailable)
+        {
             if (WordInputManager.S != null)
                 WordInputManager.S.ShowInputField();
-            _userWindowEndTime = null;  // New window: clear "user ended" so ramp uses scheduled end next time
-        } else if (_wasGameAvailable && !nowAvailable) {
+            _userWindowEndTime = null;
+        }
+        else if (_wasGameAvailable && !nowAvailable)
+        {
             if (WordInputManager.S != null)
                 WordInputManager.S.HideInputField();
         }
@@ -71,7 +72,7 @@ public class GameManager : MonoBehaviour
         return now >= start && now <= end;
     }
 
-    /// <summary>Minutes until the game becomes available (0 if already available).</summary>
+    /// <summary>Minutes until the next window opens (0 if already available).</summary>
     public double MinutesUntilAvailable()
     {
         if (IsGameAvailable) return 0;
@@ -83,7 +84,7 @@ public class GameManager : MonoBehaviour
         return (tomorrowStart - now).TotalMinutes;
     }
 
-    /// <summary>Minutes since the availability window ended (0 if currently available). Use for move-away ramp from home.</summary>
+    /// <summary>Minutes since today's scheduled window ended (0 if still inside window).</summary>
     public double MinutesSinceAvailableEnded()
     {
         if (IsGameAvailable) return 0;
@@ -96,13 +97,12 @@ public class GameManager : MonoBehaviour
         return (now - yesterdayEnd).TotalMinutes;
     }
 
-    /// <summary>Call when the user ends the session by entering a word. Move-away ramp will key off this time instead of scheduled window end.</summary>
     public void NotifyUserEndedWindow(DateTime atTime)
     {
         _userWindowEndTime = atTime;
     }
 
-    /// <summary>Minutes since the effective window end (scheduled end, or word-entry when user entered a word). 0 if still in window. Circles use this to start moving away.</summary>
+    /// <summary>Minutes since effective end: word entry time if set, else scheduled end.</summary>
     public double MinutesSinceEffectiveWindowEnd()
     {
         if (IsGameAvailable) return 0;
@@ -114,7 +114,7 @@ public class GameManager : MonoBehaviour
         return MinutesSinceAvailableEnded();
     }
 
-    /// <summary>Effective window end as minutes from midnight (for ramp curve). When user entered a word, this is word-entry time so circles move away immediately.</summary>
+    /// <summary>Effective window end as minutes since midnight (for ramp math).</summary>
     public double GetEffectiveWindowEndMinutesSinceMidnight()
     {
         if (_userWindowEndTime.HasValue)
@@ -124,11 +124,49 @@ public class GameManager : MonoBehaviour
         return scheduledEnd.TimeOfDay.TotalMinutes;
     }
 
-    private void GetTextInput(){
-        // informationText.text = "begin";
+    public void SetGameAvailable(bool available)
+    {
+        _gameAvailableOverride = available;
     }
 
-    public void SetGameAvailable(bool available) {
-        _gameAvailableOverride = available;
+    /// <summary>
+    /// 1 = fully "home" (inside window or at ramp edges), 0 = away. Used by circles and mixer filter.
+    /// </summary>
+    public float GetAvailabilityHomeBlend(float approachCurvePower = 1f)
+    {
+        if (!enforceTimeWindow || IsGameAvailable)
+            return 1f;
+
+        float rampMinutes = Mathf.Max(0.01f, eventMinutes);
+
+        // Approaching window start: ease 0 → 1.
+        float minutesUntil = (float)MinutesUntilAvailable();
+        if (minutesUntil > 0f && minutesUntil < rampMinutes)
+        {
+            float t = 1f - (minutesUntil / rampMinutes);
+            return EaseInOutPow01(t, approachCurvePower);
+        }
+
+        // After effective end: ease 1 → 0.
+        float minutesSinceEnd = (float)MinutesSinceEffectiveWindowEnd();
+        if (minutesSinceEnd > 0f && minutesSinceEnd < rampMinutes)
+        {
+            float t = 1f - (minutesSinceEnd / rampMinutes);
+            return EaseInOutPow01(t, approachCurvePower);
+        }
+
+        return 0f;
+    }
+
+    // curvePower 1 ≈ linear; lower → stronger ease-in-out (linger at ends).
+    static float EaseInOutPow01(float t, float curvePower)
+    {
+        t = Mathf.Clamp01(t);
+        curvePower = Mathf.Clamp(curvePower, 0.05f, 1f);
+        float p = Mathf.Lerp(1f, 8f, 1f - curvePower);
+
+        if (t <= 0.5f)
+            return 0.5f * Mathf.Pow(t * 2f, p);
+        return 1f - 0.5f * Mathf.Pow((1f - t) * 2f, p);
     }
 }

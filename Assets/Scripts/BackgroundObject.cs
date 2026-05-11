@@ -1,49 +1,48 @@
 using UnityEngine;
 
+/// <summary>
+/// One circle: drifts "away", eases toward home with <see cref="GameManager"/>, additive tint, idle frame shuffle + pulse.
+/// </summary>
 public class BackgroundObject : MonoBehaviour
 {
-    public float[] properLoc = {0, 1.75f};
+    public float[] properLoc = { 0, 1.75f };
     public float properScale = 7f;
     public float properOpacity = 1f;
-    [Tooltip("Opacity when scattered (away). At home, objects overlap and add to white.")]
+
+    // Opacity when scattered; at home, overlaps add toward white (additive).
     [Range(0.01f, 1f)] public float awayOpacity = 0.2f;
 
-    const float HalfCycleMinutes = 720f; // 12 hours each way (home→away, then away→home)
-    const float ReturnRampMinutes = 2f; // final approach to home is linear over this many minutes
-    const float MoveAwayRampMinutes = 2f; // first minutes after time is up: ease out from home (no sudden jump)
-    [Tooltip("Lower = object lingers at each end longer, then moves more sharply. 1 = linear.")]
+    // Lower = linger at each end of the time blend, sharper through the middle. 1 = linear.
     [Range(0.05f, 1f)] public float approachCurvePower = 0.2f;
+
     float awayX, awayY, awayScale;
-    float baseScale; // scale from MoveHome; pulse is applied on top in Update
-    float homeBlend;  // 1 = at home (target time), 0 = away; used to dampen pulse near home
+    float baseScale;
+    // 1 = at scheduled "home" in the time window; dampens pulse near home.
+    float homeBlend;
 
-    /// <summary>One of R, G, or B so overlapping at home adds to white (additive blending).</summary>
+    // One of R, G, B at α/3 so overlapping at home reads as white.
     Color baseTint;
-    const float ChannelAlpha = 1f / 3f; // so R+G+B overlap = white
+    const float ChannelAlpha = 1f / 3f;
 
-    [Tooltip("Assign in editor to ensure shader is included in WebGL build. Otherwise uses Shader.Find (requires shader in Graphics > Always Included Shaders).")]
+    // Assign in the inspector so WebGL includes the shader; else Shader.Find (may miss without Always Included Shaders).
     [SerializeField] Shader additiveShader;
 
-    // Animation Values
     private SpriteRenderer sr;
     private Sprite[] frames;
     public float frameRate = 10f;
 
-    // Pulse Values
     private float pulseScale = 1f;
     private float pulseSpeed = 2f;
     private float pulseAmplitude = 0.1f;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         InitializeAnimation();
         SetHomeValues();
         SetAwayValues();
-        InvokeRepeating("MoveHome", 0f, 0.5f);
+        InvokeRepeating(nameof(MoveHome), 0f, 0.5f);
     }
 
-    // Update is called once per frame
     void Update()
     {
         Pulse();
@@ -53,12 +52,11 @@ public class BackgroundObject : MonoBehaviour
     {
         sr = GetComponent<SpriteRenderer>();
         frames = Resources.LoadAll<Sprite>("Circles");
-        InvokeRepeating("Animate", 0f, 1f / frameRate);
+        InvokeRepeating(nameof(Animate), 0f, 1f / frameRate);
         SetAdditiveBlending();
 
-        // Randomize Pulse Values
         pulseScale = Random.Range(0.9f, 1.1f);
-        pulseSpeed = Random.Range(.1f, 1f);
+        pulseSpeed = Random.Range(0.1f, 1f);
         pulseAmplitude = Random.Range(0.05f, 0.10f);
     }
 
@@ -67,10 +65,10 @@ public class BackgroundObject : MonoBehaviour
         Shader shader = additiveShader != null ? additiveShader : Shader.Find("Custom/Sprites Additive");
         if (shader != null)
             sr.material = new Material(shader);
-        // If shader not found (e.g. not in WebGL build), sprites keep default blend; add to Graphics > Always Included Shaders or assign above
     }
 
-    void SetHomeValues() {
+    void SetHomeValues()
+    {
         float randOffset = Random.Range(0.1f, 0.1f);
         properLoc[0] += randOffset;
         properLoc[1] += randOffset;
@@ -95,42 +93,8 @@ public class BackgroundObject : MonoBehaviour
 
     void MoveHome()
     {
-        float minutes = (float)GameManager.S.MinutesUntilAvailable();
-        float t; // 1 = home, 0 = away
-        if (minutes >= HalfCycleMinutes)
-        {
-            // Move-away leg: home to away. Ramp keyed to effective window end (scheduled end or when user entered a word).
-            float raw = Mathf.Clamp01((minutes - HalfCycleMinutes) / HalfCycleMinutes); // 0 at 720, 1 at 1440
-            float tCurve = 1f - Mathf.Pow(1f - raw, approachCurvePower);
-            float minutesSinceEnd = (float)GameManager.S.MinutesSinceEffectiveWindowEnd();
-            if (minutesSinceEnd <= MoveAwayRampMinutes && MoveAwayRampMinutes > 0f)
-            {
-                // Ease out from home over first 2 min after effective window end (scheduled or word-entry time)
-                double effectiveEndMin = GameManager.S.GetEffectiveWindowEndMinutesSinceMidnight();
-                float minutesAtRampEnd = 1440f - (float)effectiveEndMin - MoveAwayRampMinutes;
-                float rawAtRampEnd = Mathf.Clamp01((minutesAtRampEnd - HalfCycleMinutes) / HalfCycleMinutes);
-                float tAtRampEnd = 1f - Mathf.Pow(1f - rawAtRampEnd, approachCurvePower);
-                float rampT = minutesSinceEnd / MoveAwayRampMinutes; // 0 when window just ended, 1 at 2 min after
-                t = Mathf.Lerp(1f, tAtRampEnd, rampT);
-            }
-            else
-                t = tCurve;
-        }
-        else
-        {
-            // Return-home leg: 0–720 min → away to home. Linger away then snap home; last ReturnRampMinutes are linear ramp
-            float raw = Mathf.Clamp01(minutes / HalfCycleMinutes); // 0 at 0 (just available), 1 at 720 (farthest)
-            float tCurve = 1f - Mathf.Pow(raw, approachCurvePower);
-            if (minutes <= ReturnRampMinutes && ReturnRampMinutes > 0f)
-            {
-                // Final approach: linear over last 2 min so ramp feels like 2 min, not 5 sec
-                float tAtRampStart = 1f - Mathf.Pow(ReturnRampMinutes / HalfCycleMinutes, approachCurvePower);
-                float rampT = 1f - minutes / ReturnRampMinutes; // 0 at 2 min left, 1 at 0 min
-                t = Mathf.Lerp(tAtRampStart, 1f, rampT);
-            }
-            else
-                t = tCurve;
-        }
+        // t = 1 at "home" in the availability blend (see GameManager).
+        float t = GameManager.S.GetAvailabilityHomeBlend(approachCurvePower);
 
         Vector3 awayPos = new Vector3(awayX, awayY, 0);
         Vector3 homePos = new Vector3(properLoc[0], properLoc[1], 0);
@@ -151,7 +115,7 @@ public class BackgroundObject : MonoBehaviour
 
     void Pulse()
     {
-        // Less pronounced as we get closer to target time (homeBlend → 1)
+        // Softer pulse as we approach home (homeBlend → 1).
         float effectiveAmplitude = pulseAmplitude * (1f - homeBlend);
         float t = (Mathf.Sin(Time.time * pulseSpeed) + 1f) * 0.5f;
         float pulseMult = Mathf.Lerp(1f, 1f + effectiveAmplitude, t);
