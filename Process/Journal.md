@@ -56,6 +56,38 @@ As mentioned in my [last commit](https://github.com/mouseandthebillionaire/lauti
 
 So, with all that, I will work on getting that up and running by Monday and try again!
 
+## 03.25.26 | The Week After The Week of Words™️
+
+After spending a week with this I have some thoughts (in no particular order):
+
+As is, this isn't very compelling. Or, should I say, the "entering of the word" part isn't very compelling. The "waiting for the circles to align" part is actually _very_ compelling. Arguably the best part as is. Reflecting on this after the first day made me wonder if it might be worthwhile to randomize the time within a ten-minute window. So the user knows that it will happen sometime between noon and ten-after. You show up at five-till and then have to wait. This might force the hand on the waiting and being present part. As it stands now you can (and I did) easily just have it in the background, and then when the time comes you switch tabs, enter your word, and go about with your day. Not ideal!
+
+As for the music, I had been waiting on the Week of Words™️ to be concluded, but I think we need to charge ahead with this. This (and I'm going to go on a bit of a rant here) made me think a lot about "proper" design process. Proper design process would have me test the idea for the week (as I did) before moving on, but I actually think I should have been working on the music anyway. I guess maybe there's two thoughts here. 1) I know music is going to be a part of this, so why wait? and 2) I kind of have a designer's intuition that'll work out? Obviously things will come up out of the testing, but that could have been incorporated as I wrote the music? Maybe this isn't that compelling of an insight, but it did give me a little crisis in faith as far as how you teach/talk about process. "Just make stuff" should reign supreme, perhaps, over "follow this method"...?
+
+I stored the words as a console message, so I was able to see these, and I think that feels increasingly important. I have experimented throughout the week with putting the words in the background field, which isn't perfect, but it's a step in the right direction. Maybe you can click on the words to hear the song that they produced? Too much overhead!? Too complicated!?
+
+The visuals need to help with the different stages in this. Responding to the word input. Accompanying the musical koan. Storing the word. Recalling the word. Moving through the weeks worth of words. What does it look like when you have started your week? What does it look like when you have ended your week? What does it look like if you skip a day? A lot to figure out here to make this feel like a unified experience.
+
+I realized when I tried to access this on my phone (and another browser) that as-is this will only work if you access it on the same browser every day. I think the only solution to this would be to have a log-in which feels like overkill? Otherwise, just make sure people know to use the same browser? Or check for IP address? Or make it a standalone desktop app (yuck)? Something to think about though.
+
+I think there's more, but for now, let's start working through these.
+
+## 05.11.26 | That Sounds
+
+![Max Patch](Media/maxPatch.png)
+
+Picked this up again after finishing a few other projects and trying to get ready for the Game Poems submission. Spent the last two weeks working on the RNBO/Audio portion of this which went well until it hit the inevitable these-things-aren't-connecting-for-some-reason issues.
+
+Long story short, I realized that the [RNBO Unity Integration](https://github.com/Cycling74/rnbo.unity.audioplugin) that I've used previously doesn't work with a WebGL Unity build which isn't great! Claude helped me build a [bridge](../Assets/Scripts/RnboWebBridge) between a RNBO JS export and Unity which is working in this demo.
+
+[Random Melody Demo](https://mouseandthebillionaire.github.io/lautir/melodyTest/)
+
+Now, as for the actual experience/design of the thing: I initially knocked this all together just so I could test the randomized musical phrases (which works!) Hitting space gives you a random melody, note density, and length. I don't _love_ the synth sound right now; the delay is doing a lot of heavy-lifting in keeping it cohesive. I might implement the one from [LTHC](https://www.mouseandthebillionaire.com/lthc/), or I might spend some time tweaking this one so that it is more pleasant. Either way, much more work on the sound side of this before I implement it in the main program.
+
+One random side note (that might be important later): I'm realizing that with the breakdown between RNBO and Unity, Unity is basically unnecessary at this point. As loathe as I am to scrap the whole project and rebuild, it might make more sense to program a completely JS version of this (since it has to be deployed via the web anyway...) Just a thought!
+
+But for now, focusing on sweeting the sound.
+
 ## Notes
 
 [^1]: I actually reallllly like this idea. This also opens it up for being a defined length. Come back for seven days and you get a little thing at the end. Also reminds me a bit of the [A Series of Questions](https://github.com/mouseandthebillionaire/_sonicCharacteristics) project, but shoot me if I ever try and do audio-export from Unity again. Famous last words!
