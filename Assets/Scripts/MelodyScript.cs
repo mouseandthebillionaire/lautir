@@ -82,36 +82,8 @@ public class MelodyScript : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Space) || (tapToTriggerOnMobile && WasMobileTapThisFrame()))
-            TryTriggerMelody();
-    }
-
-    static bool IsMobileLike() =>
-        Application.isMobilePlatform || SystemInfo.deviceType == DeviceType.Handheld;
-
-    bool WasMobileTapThisFrame()
-    {
-        if (!IsMobileLike() || Input.touchCount == 0)
-            return false;
-
-        Touch t = Input.GetTouch(0);
-        if (t.phase != TouchPhase.Began)
-            return false;
-
-        return EventSystem.current == null || !EventSystem.current.IsPointerOverGameObject(t.fingerId);
-    }
-
-    void TryTriggerMelody()
-    {
-        if (melodyRunning) return;
-        StartCoroutine(RandomizeMelodyWrapper());
-    }
-
-    IEnumerator RandomizeMelodyWrapper()
-    {
-        melodyRunning = true;
-        yield return RandomizeMelody();
-        melodyRunning = false;
+        if (Input.GetKeyDown(KeyCode.Space)) StartCoroutine(RandomizeMelody());
+        if (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began) StartCoroutine(RandomizeMelody());
     }
 
     public IEnumerator RandomizeMelody()
