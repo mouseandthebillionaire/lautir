@@ -59,7 +59,8 @@ mergeInto(LibraryManager.library, {
       if (window.RNBO && window.RNBO.createDevice) return;
       await new Promise((resolve, reject) => {
         const el = document.createElement("script");
-        el.src = "https://cdn.cycling74.com/rnbo/1.3.3/rnbo.min.js";
+        // Must match lautirSynth.export.json meta.rnboversion (currently 1.4.3).
+        el.src = "https://cdn.cycling74.com/rnbo/1.4.3/rnbo.min.js";
         el.async = true;
         el.onload = resolve;
         el.onerror = reject;
