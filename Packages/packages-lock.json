@@ -1,13 +1,5 @@
 {
   "dependencies": {
-    "com.cycling74.arpsynth": {
-      "version": "file:../RNBO/arpSynth",
-      "depth": 0,
-      "source": "local",
-      "dependencies": {
-        "com.cycling74.rnbotypes": "0.0.2"
-      }
-    },
     "com.cycling74.lautirsynth": {
       "version": "file:../RNBO/LautirSynth",
       "depth": 0,

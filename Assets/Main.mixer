@@ -1,93 +1,5 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!244 &-7690411198995144926
-AudioMixerEffectController:
-  m_ObjectHideFlags: 3
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_EffectID: 054f6b844c7314401b35928e51b5d784
-  m_EffectName: arpSynth
-  m_MixLevel: b99f278cc37354daa9b126029e5adc60
-  m_Parameters:
-  - m_ParameterName: 'Instance Index '
-    m_GUID: ce750d73a0bea4cd48f9e69748677c9e
-  - m_ParameterName: filter_0
-    m_GUID: a70ada3bba1f74a35a861d758488d874
-  - m_ParameterName: resonance
-    m_GUID: f14edaeb4e2ea44e3a2935c0496a43f3
-  - m_ParameterName: balance
-    m_GUID: 6ce3ad11ba5a94b96a21351036b0476a
-  - m_ParameterName: instrumentVoice
-    m_GUID: dc5c2118e5a0346e391b8ae744b2c0e7
-  - m_ParameterName: bpm
-    m_GUID: 0d02c1a3d1dfd410992770ef2384b91d
-  - m_ParameterName: noteChance
-    m_GUID: 1ce4e4f32f9df44f48c9d15cf99ebc65
-  - m_ParameterName: arpStyle
-    m_GUID: a755315f3c26a40119d511534e846c32
-  - m_ParameterName: arpPattern
-    m_GUID: bbf154f19b8034730b24223c83c40d7f
-  - m_ParameterName: noteBredth
-    m_GUID: f0a25a5048abc44ea9511ea33b555987
-  - m_ParameterName: reverb/indiffus
-    m_GUID: cedfc902303ff4f138f5499b5fb6a612
-  - m_ParameterName: reverb/damping
-    m_GUID: a3de7aefcc064451189f34e9addf03fb
-  - m_ParameterName: reverb/predelay
-    m_GUID: 7a6742ad7ae3d41e6a488e9ba7bba893
-  - m_ParameterName: reverb/decay2
-    m_GUID: bdecd9a48f6b548e982675a2c5d13445
-  - m_ParameterName: reverb/inbandwi
-    m_GUID: fc4fb1f51899d4cef89e04946d916767
-  - m_ParameterName: reverb/indiffus
-    m_GUID: 52e3c70c2de7047aa9eb21502615556b
-  - m_ParameterName: reverb/decay1
-    m_GUID: 12f72395a8e304411b77f323d8c67283
-  - m_ParameterName: reverb/drywet
-    m_GUID: 3511bf69646c34458808905ff6fb12dc
-  - m_ParameterName: reverb/decay
-    m_GUID: 015d09f07b96949239c2af2f8573ce01
-  - m_ParameterName: env.adsr/attack
-    m_GUID: ad900f70049a34e1aa797ab1a309820d
-  - m_ParameterName: env.adsr/decay
-    m_GUID: 5255740a3b51c496ea7de5a5c151ce3a
-  - m_ParameterName: env.adsr/sustai
-    m_GUID: 4ae4d5e3b3d3d4ff19151770ecbc1015
-  - m_ParameterName: env.adsr/releas
-    m_GUID: ee3ad5912c1f74f26951eda604e5de90
-  - m_ParameterName: del_0/left
-    m_GUID: 1b7192edecf414cf0b5e978c37ce1069
-  - m_ParameterName: del_0/fb
-    m_GUID: 30ff1b443bee14420a11e021bbe288dc
-  - m_ParameterName: del_0/right
-    m_GUID: 26fff898ff22740b4989a24cd7b6892c
-  - m_ParameterName: sS/ratio_1
-    m_GUID: 74d2b6226d52b42ca86f7b651f1f1e50
-  - m_ParameterName: sS/index_1
-    m_GUID: 1093d1e9b8ce3453195c173b8519f72b
-  - m_ParameterName: sS/sDel/left
-    m_GUID: 05daf404d33a6443ab2b8aba9eb7f5f5
-  - m_ParameterName: sS/sDel/fb
-    m_GUID: ac13811971a834548842b1653fc76fb6
-  - m_ParameterName: sS/sDel/right
-    m_GUID: a015da2389cf54111b21f160362dffe3
-  - m_ParameterName: sS/sbb.env.anal
-    m_GUID: 246dc8eb5bab246288f9897291283090
-  - m_ParameterName: sS/sbb.env.anal
-    m_GUID: 86da83f112fed48d6bbd73220f294693
-  - m_ParameterName: sS/sbb.env.anal
-    m_GUID: 304120dfc003543bbb7bed6d927a20d2
-  - m_ParameterName: sS/sbb.env.anal
-    m_GUID: 9c675db10c54145599513e469814bc1d
-  - m_ParameterName: sNotes/shimmerS
-    m_GUID: 4f74bebf849414038a1a90109fcdd699
-  - m_ParameterName: sNotes/shimmerB
-    m_GUID: f5b7a9621f7da48d78de9a81d128224c
-  m_SendTarget: {fileID: 0}
-  m_EnableWetMix: 0
-  m_Bypass: 0
 --- !u!244 &-5610008460174638814
 AudioMixerEffectController:
   m_ObjectHideFlags: 3
@@ -168,20 +80,6 @@ AudioMixerEffectController:
   m_SendTarget: {fileID: 0}
   m_EnableWetMix: 0
   m_Bypass: 0
---- !u!244 &-4349474503954454112
-AudioMixerEffectController:
-  m_ObjectHideFlags: 3
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_EffectID: c2e94985896464afcba4c35789e65a0e
-  m_EffectName: Attenuation
-  m_MixLevel: 99ea72ea5e4ee469ba3baeed8e5c6d53
-  m_Parameters: []
-  m_SendTarget: {fileID: 0}
-  m_EnableWetMix: 0
-  m_Bypass: 0
 --- !u!243 &-595649889735175370
 AudioMixerGroupController:
   m_ObjectHideFlags: 0
@@ -239,7 +137,6 @@ AudioMixerController:
     - 16a67203a5adc4f8eb3710e4dca1f114
     - 81c8ff2d9a316400a970a53667b017f4
     - 10116e36dbef34aa99b396dd80f3ec8b
-    - 43fd890a3f0f2446383e8f0fba12a393
     - cbb463b26f4cd40febc5824baa2542b8
     name: View
   m_CurrentViewIndex: 0
@@ -257,7 +154,6 @@ AudioMixerGroupController:
   - {fileID: 7608121822202799386}
   - {fileID: 4318175080533759621}
   - {fileID: -595649889735175370}
-  - {fileID: 1815998660589370967}
   m_Volume: 2b6f666fb31cd4bdcab47f66d3f2bf97
   m_Pitch: d1f81efdf62f44047bd1a90e5140a58a
   m_Send: 00000000000000000000000000000000
@@ -385,26 +281,6 @@ AudioMixerSnapshotController:
     0fded2ef13d55428b8dd05fa7578b521: 2
     9a14f8efe082649c592fe2e9ed136d7e: 1
   m_TransitionOverrides: {}
---- !u!243 &1815998660589370967
-AudioMixerGroupController:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: ArpSynth
-  m_AudioMixer: {fileID: 24100000}
-  m_GroupID: 43fd890a3f0f2446383e8f0fba12a393
-  m_Children: []
-  m_Volume: fdcf9456ae8e141838aead47ffaacb5a
-  m_Pitch: 6a36eccd32190477abf87df39149c95d
-  m_Send: 00000000000000000000000000000000
-  m_Effects:
-  - {fileID: -4349474503954454112}
-  - {fileID: -7690411198995144926}
-  m_UserColorIndex: 0
-  m_Mute: 1
-  m_Solo: 0
-  m_BypassEffects: 0
 --- !u!244 &3011529330517243107
 AudioMixerEffectController:
   m_ObjectHideFlags: 3

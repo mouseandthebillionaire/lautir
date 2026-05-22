@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "com.cycling74.arpsynth": "file:../RNBO/arpSynth",
     "com.cycling74.lautirsynth": "file:../RNBO/LautirSynth",
     "com.cycling74.rnbotypes": "file:/Users/m/_Projects/RNBO2UNITY/RNBOTypes",
     "com.unity.2d.common": "13.0.1",

@@ -105,6 +105,16 @@ mergeInto(LibraryManager.library, {
       slot.device = device;
       slot.ready = true;
       slot.lastError = "";
+
+      // transportUsed: true in export — start transport inline (jslib strips top-level helpers).
+      const tNow = (typeof RNBO.TimeNow !== "undefined" && RNBO.TimeNow !== null) ? RNBO.TimeNow : 0;
+      if (RNBO.TransportEvent) {
+        device.scheduleEvent(new RNBO.TransportEvent(tNow, 1));
+        console.log("[LAUTIR] Transport running (instance " + instanceIndex + ")");
+      } else {
+        console.warn("[LAUTIR] TransportEvent unavailable (instance " + instanceIndex + ")");
+      }
+
       console.log("[LAUTIR] RNBO ready instance " + instanceIndex + " | AudioContext=" + st.audioContext.state);
     };
 
@@ -161,8 +171,12 @@ mergeInto(LibraryManager.library, {
       console.warn("[LAUTIR] RNBO.MessageEvent missing");
       return 0;
     }
-    const t = (typeof RNBO.TimeNow !== "undefined" && RNBO.TimeNow !== null) ? RNBO.TimeNow : 0;
-    const ev = new RNBO.MessageEvent(t, tag, [ value ]);
+
+    const tNow = (typeof RNBO.TimeNow !== "undefined" && RNBO.TimeNow !== null) ? RNBO.TimeNow : 0;
+    if (RNBO.TransportEvent) {
+      slot.device.scheduleEvent(new RNBO.TransportEvent(tNow, 1));
+    }
+    const ev = new RNBO.MessageEvent(tNow, tag, [ value ]);
     slot.device.scheduleEvent(ev);
     console.log("[LAUTIR] SendMessage " + tag + " → instance " + instanceIndex + " | AudioContext=" + (window.__lautirRnbo && window.__lautirRnbo.audioContext ? window.__lautirRnbo.audioContext.state : "?"));
     return 1;
