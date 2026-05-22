@@ -332,7 +332,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &753665760
 Transform:
   m_ObjectHideFlags: 0
@@ -367,7 +367,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PadManager
   padNotes: []
   minVolume: 0.2
-  maxVolume: 0.4
+  maxVolume: 0.6
   volumeSpeedMultiplier: 1
   minPan: -0.75
   maxPan: 0.75
