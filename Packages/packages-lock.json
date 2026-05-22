@@ -8,32 +8,8 @@
         "com.cycling74.rnbotypes": "0.0.2"
       }
     },
-    "com.cycling74.lautirsynth5": {
-      "version": "file:../RNBO/LautirSynth5",
-      "depth": 0,
-      "source": "local",
-      "dependencies": {
-        "com.cycling74.rnbotypes": "0.0.2"
-      }
-    },
-    "com.cycling74.lautirsynth6": {
-      "version": "file:../RNBO/LautirSynth6",
-      "depth": 0,
-      "source": "local",
-      "dependencies": {
-        "com.cycling74.rnbotypes": "0.0.2"
-      }
-    },
-    "com.cycling74.lautirsynth7": {
-      "version": "file:../RNBO/LautirSynth7",
-      "depth": 0,
-      "source": "local",
-      "dependencies": {
-        "com.cycling74.rnbotypes": "0.0.2"
-      }
-    },
-    "com.cycling74.lautirsynth8": {
-      "version": "file:../RNBO/LautirSynth8",
+    "com.cycling74.lautirsynth": {
+      "version": "file:../RNBO/LautirSynth",
       "depth": 0,
       "source": "local",
       "dependencies": {

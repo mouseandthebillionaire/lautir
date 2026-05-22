@@ -1,6 +1,8 @@
 using UnityEngine;
 using System;
+using System.Collections;
 using TMPro;
+using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
 /// <summary>
@@ -10,19 +12,26 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager S;
 
+    // Wipe the existing words from the PlayerPrefs.
+    public bool wipeExistingWords = false;
+
     public TMP_Text informationText;
+
+    // Fader
+    public Image fader;
+    public float fadeDuration = 1.5f;
 
     public int availableHour = 18;
     public int availableMinute = 0;
-    /// <summary>Random 0–299 s so the window start varies slightly each run.</summary>
+    // Random 0–299 s so the window start varies slightly each run.
     public int secondsAdjustment = 0;
     public int durationMinutes = 5;
-    /// <summary>Minutes used to ease toward / away from the window in <see cref="GetAvailabilityHomeBlend"/>.</summary>
+    // Minutes used to ease toward / away from the window in GetAvailabilityHomeBlend.
     public int eventMinutes = 2;
 
     public bool enforceTimeWindow = true;
     bool? _gameAvailableOverride;
-    /// <summary>Set when the user submits a word so the "away" ramp can use that moment.</summary>
+    // Set when the user submits a word so the "away" ramp can use that moment.
     DateTime? _userWindowEndTime;
 
     public bool IsGameAvailable => _gameAvailableOverride ?? (!enforceTimeWindow || IsWithinAvailabilityWindow());
@@ -38,11 +47,18 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
+        if (wipeExistingWords) {
+            WipeExistingWords();
+        }
+        
         secondsAdjustment = Random.Range(0, 300);
         _wasGameAvailable = IsGameAvailable;
         // Show input immediately if we boot already inside the window (any script order).
         if (_wasGameAvailable && WordInputManager.S != null)
             WordInputManager.S.ShowInputField();
+
+        // Fade in the game
+        StartCoroutine(FadeInGame());
     }
 
     void Update()
@@ -62,6 +78,27 @@ public class GameManager : MonoBehaviour
         }
 
         _wasGameAvailable = nowAvailable;
+    }
+
+    // fade int he game each time
+    private IEnumerator FadeInGame()
+    {
+        fader.color = new Color(fader.color.r, fader.color.g, fader.color.b, 1f);
+        float elapsed = 0f;
+        float duration = fadeDuration;
+        
+        // Give it a second
+        yield return new WaitForSeconds(0.5f);
+
+        // Start fading
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float faderAlpha = Mathf.Lerp(1f, 0f, elapsed / duration);
+            fader.color = new Color(fader.color.r, fader.color.g, fader.color.b, faderAlpha);
+            yield return null;
+        }
+        fader.color = new Color(fader.color.r, fader.color.g, fader.color.b, 0f);
     }
 
     bool IsWithinAvailabilityWindow()
@@ -130,43 +167,60 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 1 = fully "home" (inside window or at ramp edges), 0 = away. Used by circles and mixer filter.
+    /// 1 = fully "home" (aligned), 0 = furthest away. Circles ease over 12h before/after the daily anchor;
+    /// <paramref name="eventMinutes"/> sharpens the last minutes into the window and out after it ends.
     /// </summary>
     public float GetAvailabilityHomeBlend(float approachCurvePower = 1f)
     {
         if (!enforceTimeWindow || IsGameAvailable)
             return 1f;
 
+        const float halfCycleMinutes = 720f; // 12h scattered ↔ 12h approaching home
         float rampMinutes = Mathf.Max(0.01f, eventMinutes);
+        approachCurvePower = Mathf.Clamp(approachCurvePower, 0.05f, 1f);
 
-        // Approaching window start: ease 0 → 1.
         float minutesUntil = (float)MinutesUntilAvailable();
-        if (minutesUntil > 0f && minutesUntil < rampMinutes)
+
+        if (minutesUntil >= halfCycleMinutes)
         {
-            float t = 1f - (minutesUntil / rampMinutes);
-            return EaseInOutPow01(t, approachCurvePower);
+            // After effective window end: ease home → away until 12h before next open.
+            float raw = Mathf.Clamp01((minutesUntil - halfCycleMinutes) / halfCycleMinutes);
+            float tCurve = 1f - Mathf.Pow(1f - raw, approachCurvePower);
+
+            float minutesSinceEnd = (float)MinutesSinceEffectiveWindowEnd();
+            if (minutesSinceEnd > 0f && minutesSinceEnd < rampMinutes)
+            {
+                double effectiveEndMin = GetEffectiveWindowEndMinutesSinceMidnight();
+                float minutesAtRampEnd = 1440f - (float)effectiveEndMin - rampMinutes;
+                float rawAtRampEnd = Mathf.Clamp01((minutesAtRampEnd - halfCycleMinutes) / halfCycleMinutes);
+                float tAtRampEnd = 1f - Mathf.Pow(1f - rawAtRampEnd, approachCurvePower);
+                float rampT = minutesSinceEnd / rampMinutes;
+                return Mathf.Lerp(1f, tAtRampEnd, rampT);
+            }
+
+            return tCurve;
         }
 
-        // After effective end: ease 1 → 0.
-        float minutesSinceEnd = (float)MinutesSinceEffectiveWindowEnd();
-        if (minutesSinceEnd > 0f && minutesSinceEnd < rampMinutes)
+        // 12h before window → ease away → home; linger away, then final ramp into the window.
+        float rawReturn = Mathf.Clamp01(minutesUntil / halfCycleMinutes);
+        float tReturn = 1f - Mathf.Pow(rawReturn, approachCurvePower);
+
+        if (minutesUntil <= rampMinutes)
         {
-            float t = 1f - (minutesSinceEnd / rampMinutes);
-            return EaseInOutPow01(t, approachCurvePower);
+            float tAtRampStart = 1f - Mathf.Pow(rampMinutes / halfCycleMinutes, approachCurvePower);
+            float rampT = 1f - minutesUntil / rampMinutes;
+            return Mathf.Lerp(tAtRampStart, 1f, rampT);
         }
 
-        return 0f;
+        return tReturn;
     }
 
-    // curvePower 1 ≈ linear; lower → stronger ease-in-out (linger at ends).
-    static float EaseInOutPow01(float t, float curvePower)
+    void WipeExistingWords()
     {
-        t = Mathf.Clamp01(t);
-        curvePower = Mathf.Clamp(curvePower, 0.05f, 1f);
-        float p = Mathf.Lerp(1f, 8f, 1f - curvePower);
-
-        if (t <= 0.5f)
-            return 0.5f * Mathf.Pow(t * 2f, p);
-        return 1f - 0.5f * Mathf.Pow((1f - t) * 2f, p);
+        PlayerPrefs.DeleteKey("lautir_words");
+        PlayerPrefs.Save();
+        WordDisplay.S.DisplayWords();
+        WordInputManager.S.ClearSavedWords();
+        wipeExistingWords = false;
     }
 }

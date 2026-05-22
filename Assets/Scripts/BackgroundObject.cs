@@ -1,8 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// One circle: drifts "away", eases toward home with <see cref="GameManager"/>, additive tint, idle frame shuffle + pulse.
-/// </summary>
 public class BackgroundObject : MonoBehaviour
 {
     public float[] properLoc = { 0, 1.75f };

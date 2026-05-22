@@ -1,5 +1,6 @@
 using UnityEngine;
 using TMPro;
+using System.Collections;
 using System.Collections.Generic;
 
 /// <summary>Renders the six saved words from <see cref="WordInputManager"/>.</summary>
@@ -23,9 +24,24 @@ public class WordDisplay : MonoBehaviour
 
     public void DisplayWords()
     {
+        wordText.alpha = 0f;
         words = WordInputManager.LoadWords();
         wordText.text = "";
         for (int i = 0; i < words.Count; i++)
             wordText.text += words[i] + "\n";
+        StartCoroutine(FadeInWords());
+    }
+
+    private IEnumerator FadeInWords()
+    {
+        float elapsed = 0f;
+        float duration = 0.5f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            wordText.alpha = Mathf.Lerp(0f, 1f, elapsed / duration);
+            yield return null;
+        }
+        wordText.alpha = 1f;
     }
 }

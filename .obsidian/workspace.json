@@ -185,6 +185,11 @@
   },
   "active": "4b9ff604c6bf1229",
   "lastOpenFiles": [
+    "Library/BurstCache/JIT/BurstCacheManifest.cm",
+    "Library/expandedItems",
+    "Temp/UnityTempFile-a35afe26a3faf4ea399f2d419a351a4c",
+    "Temp/ADB-Refreshf9aa84830f2234294a33ce68451b154d",
+    "Temp/ADB-Refresh1e05e51f09da2452dae87115cec8ceb7",
     "Process/Media/maxPatch.png",
     "Process/Media/Screenshot 2026-05-11 at 12.37.16.png",
     "docs/melodyTest/Build/melodyTest.wasm",
@@ -193,10 +198,6 @@
     "docs/melodyTest/Build/melodyTest.data",
     "docs/melodyTest/Build",
     "docs/melodyTest/LautirSynth/lautirSynth.export.license",
-    "docs/melodyTest/LautirSynth/lautirSynth.export.json",
-    "docs/melodyTest/LautirSynth/dependencies.json",
-    "docs/melodyTest/LautirSynth",
-    "docs/melodyTest/index.html",
     "bridge.md",
     "Process/Journal.md",
     "Tools/magic-url-auth/node_modules/sqlite3/README.md",
@@ -229,7 +230,6 @@
     "docs/0.2/TemplateData/unity-logo-light.png",
     "docs/0.2/TemplateData/unity-logo-dark.png",
     "docs/0.2/TemplateData/progress-bar-full-light.png",
-    "docs/0.2/TemplateData/progress-bar-full-dark.png",
-    "docs/0.2/TemplateData/progress-bar-empty-light.png"
+    "docs/0.2/TemplateData/progress-bar-full-dark.png"
   ]
 }

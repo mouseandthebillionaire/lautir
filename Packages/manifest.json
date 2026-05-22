@@ -1,10 +1,7 @@
 {
   "dependencies": {
     "com.cycling74.arpsynth": "file:../RNBO/arpSynth",
-    "com.cycling74.lautirsynth5": "file:../RNBO/LautirSynth5",
-    "com.cycling74.lautirsynth6": "file:../RNBO/LautirSynth6",
-    "com.cycling74.lautirsynth7": "file:../RNBO/LautirSynth7",
-    "com.cycling74.lautirsynth8": "file:../RNBO/LautirSynth8",
+    "com.cycling74.lautirsynth": "file:../RNBO/LautirSynth",
     "com.cycling74.rnbotypes": "file:/Users/m/_Projects/RNBO2UNITY/RNBOTypes",
     "com.unity.2d.common": "13.0.1",
     "com.unity.feature.2d": "2.0.2",
