@@ -95,6 +95,11 @@ public class MelodyScript : MonoBehaviour
         timbre = Random.Range(0, 1000);
         // Set Note
         note = Random.Range(1, 5);
+        // Set Left Delay
+        leftDelay = Random.Range(100, 1000);
+        // Set Right Delay
+        rightDelay = Random.Range(100, 1000);
+
 
 
 
