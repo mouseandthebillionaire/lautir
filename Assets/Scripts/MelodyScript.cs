@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using Cycling74.RNBOTypes;
 
 // Drives the RNBO patch: random phrase/density/melody, wait, then trigger playback.
@@ -37,6 +38,11 @@ public class MelodyScript : MonoBehaviour
     public int leftDelay = 300;
     public int rightDelay = 400;
     public float feedback = 0.5f;
+
+    [Tooltip("On phone/tablet, tap the screen (outside UI) to trigger, same as Space.")]
+    public bool tapToTriggerOnMobile = true;
+
+    bool melodyRunning;
 
     void Start()
     {
@@ -76,8 +82,36 @@ public class MelodyScript : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Space))
-            StartCoroutine(RandomizeMelody());
+        if (Input.GetKeyDown(KeyCode.Space) || (tapToTriggerOnMobile && WasMobileTapThisFrame()))
+            TryTriggerMelody();
+    }
+
+    static bool IsMobileLike() =>
+        Application.isMobilePlatform || SystemInfo.deviceType == DeviceType.Handheld;
+
+    bool WasMobileTapThisFrame()
+    {
+        if (!IsMobileLike() || Input.touchCount == 0)
+            return false;
+
+        Touch t = Input.GetTouch(0);
+        if (t.phase != TouchPhase.Began)
+            return false;
+
+        return EventSystem.current == null || !EventSystem.current.IsPointerOverGameObject(t.fingerId);
+    }
+
+    void TryTriggerMelody()
+    {
+        if (melodyRunning) return;
+        StartCoroutine(RandomizeMelodyWrapper());
+    }
+
+    IEnumerator RandomizeMelodyWrapper()
+    {
+        melodyRunning = true;
+        yield return RandomizeMelody();
+        melodyRunning = false;
     }
 
     public IEnumerator RandomizeMelody()
