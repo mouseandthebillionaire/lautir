@@ -366,8 +366,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PadManager
   padNotes: []
-  minVolume: 0.2
-  maxVolume: 0.6
+  minVolume: 0.1
+  maxVolume: 0.4
   volumeSpeedMultiplier: 1
   minPan: -0.75
   maxPan: 0.75
