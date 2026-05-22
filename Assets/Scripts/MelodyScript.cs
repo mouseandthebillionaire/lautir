@@ -2,13 +2,15 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using Cycling74.RNBOTypes;
-
+using UnityEngine.UI;
 // Drives the RNBO patch: random phrase/density/melody, wait, then trigger playback.
 // Editor / standalone: native uses LautirSynth8Handle. 
 // WebGL: uses RnboWebBridge + JS export next to the build.
 
 public class MelodyScript : MonoBehaviour
 {
+    public Image touchTester;
+    
     // Must match the RNBO device / mixer "Instance Index" in the scene.
     public int instanceIndex = 1;
     
@@ -82,8 +84,14 @@ public class MelodyScript : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Space)) StartCoroutine(RandomizeMelody());
-        if (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began) StartCoroutine(RandomizeMelody());
+        if (Input.GetKeyDown(KeyCode.Space)) {
+            touchTester.color = Color.green;
+            StartCoroutine(RandomizeMelody());
+        }
+        if (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began) {
+            touchTester.color = Color.red;
+            StartCoroutine(RandomizeMelody());
+        }
     }
 
     public IEnumerator RandomizeMelody()
