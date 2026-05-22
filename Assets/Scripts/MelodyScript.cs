@@ -164,14 +164,18 @@ public class MelodyScript : MonoBehaviour
             RnboWebBridge.SetParamById(instanceIndex, "rightDelay", rightDelay);
             RnboWebBridge.SetParamById(instanceIndex, "feedback", feedback);
 
-            Debug.Log($"{instanceIndex}:{phraseLength}:{noteDensity}:{melody}:{timbre}:{note}");
+            Debug.Log($"[LAUTIR] Params set (instance {instanceIndex}): {phraseLength}:{noteDensity}:{melody}:{timbre}:{note}");
             
             // Wait for 1 second
             yield return new WaitForSeconds(1f);
 
             // Arm + trigger
-            RnboWebBridge.SetParamById(instanceIndex, "begin", 1);
-            RnboWebBridge.SendMessage(instanceIndex, "rnboReceive", 1);
+            if (!RnboWebBridge.SetParamById(instanceIndex, "begin", 1))
+                Debug.LogError($"[LAUTIR] SetParam begin failed (instance {instanceIndex})");
+            if (!RnboWebBridge.SendMessage(instanceIndex, "rnboReceive", 1))
+                Debug.LogError($"[LAUTIR] SendMessage rnboReceive failed (instance {instanceIndex})");
+            else
+                Debug.Log($"[LAUTIR] Trigger sent (instance {instanceIndex}) — check browser console for AudioContext=running");
 
 
 #else

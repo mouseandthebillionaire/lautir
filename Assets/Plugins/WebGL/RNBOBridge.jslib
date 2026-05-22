@@ -105,6 +105,7 @@ mergeInto(LibraryManager.library, {
       slot.device = device;
       slot.ready = true;
       slot.lastError = "";
+      console.log("[LAUTIR] RNBO ready instance " + instanceIndex + " | AudioContext=" + st.audioContext.state);
     };
 
     init().catch(fail);
@@ -139,7 +140,10 @@ mergeInto(LibraryManager.library, {
     const p = slot.device.parametersById && slot.device.parametersById.get
       ? slot.device.parametersById.get(id)
       : null;
-    if (!p) return 0;
+    if (!p) {
+      console.warn("[LAUTIR] SetParamById unknown: " + id + " (instance " + instanceIndex + ")");
+      return 0;
+    }
     p.value = value;
     return 1;
   },
@@ -149,11 +153,18 @@ mergeInto(LibraryManager.library, {
     const st = window.__lautirRnbo;
     if (!st || !st.instances) return 0;
     const slot = st.instances[String(instanceIndex)];
-    if (!slot || !slot.ready || !slot.device) return 0;
-    if (!RNBO.MessageEvent) return 0;
+    if (!slot || !slot.ready || !slot.device) {
+      console.warn("[LAUTIR] SendMessage before ready: " + tag + " (instance " + instanceIndex + ")");
+      return 0;
+    }
+    if (!RNBO.MessageEvent) {
+      console.warn("[LAUTIR] RNBO.MessageEvent missing");
+      return 0;
+    }
     const t = (typeof RNBO.TimeNow !== "undefined" && RNBO.TimeNow !== null) ? RNBO.TimeNow : 0;
     const ev = new RNBO.MessageEvent(t, tag, [ value ]);
     slot.device.scheduleEvent(ev);
+    console.log("[LAUTIR] SendMessage " + tag + " → instance " + instanceIndex + " | AudioContext=" + (window.__lautirRnbo && window.__lautirRnbo.audioContext ? window.__lautirRnbo.audioContext.state : "?"));
     return 1;
   }
 });
