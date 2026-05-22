@@ -48,6 +48,16 @@ public class MelodyScript : MonoBehaviour
 
     bool melodyRunning;
 
+#if UNITY_WEBGL && !UNITY_EDITOR
+    const float WebInitTimeoutSeconds = 15f;
+
+    static string WebPatcherUrl =>
+        Application.streamingAssetsPath + "/LautirSynth/lautirSynth.export.json";
+
+    static string WebDepsUrl =>
+        Application.streamingAssetsPath + "/LautirSynth/dependencies.json";
+#endif
+
     void Start()
     {
         
@@ -118,6 +128,17 @@ public class MelodyScript : MonoBehaviour
         if (melodyRunning) return;
         if (debugColor.HasValue && touchTester != null)
             touchTester.color = debugColor.Value;
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // Unlock AudioContext in the gesture stack (iOS/Safari requires this).
+        RnboWebBridge.ResumeAudioOnUserGesture();
+        if (!RnboWebBridge.IsReady(instanceIndex) && !webInitStarted)
+        {
+            webInitStarted = true;
+            RnboWebBridge.Init(instanceIndex, WebPatcherUrl, WebDepsUrl);
+        }
+#endif
+
         StartCoroutine(RandomizeMelodyWrapper());
     }
 
@@ -152,23 +173,17 @@ public class MelodyScript : MonoBehaviour
 
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-        // Lazy-init this instance (matches mixer Instance Index). Patch JSON is cached in JS.
-        if (!RnboWebBridge.IsReady(instanceIndex) && !webInitStarted)
-        {
-            webInitStarted = true;
-            RnboWebBridge.Init(instanceIndex, "LautirSynth/lautirSynth.export.json", "LautirSynth/dependencies.json");
-        }
-
         float t0 = Time.realtimeSinceStartup;
-        while (!RnboWebBridge.IsReady(instanceIndex) && Time.realtimeSinceStartup - t0 < 2f)
+        while (!RnboWebBridge.IsReady(instanceIndex) && Time.realtimeSinceStartup - t0 < WebInitTimeoutSeconds)
             yield return null;
 
         rnboAvailable = RnboWebBridge.IsReady(instanceIndex);
         if (!rnboAvailable)
         {
             var err = RnboWebBridge.GetLastError(instanceIndex);
-            if (!string.IsNullOrEmpty(err))
-                Debug.LogWarning($"RNBO instance {instanceIndex}: {err}");
+            Debug.LogError(string.IsNullOrEmpty(err)
+                ? $"RNBO instance {instanceIndex} not ready (check StreamingAssets/LautirSynth URLs)."
+                : $"RNBO instance {instanceIndex}: {err}");
         }
 #endif
 

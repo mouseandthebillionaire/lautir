@@ -1,4 +1,24 @@
 mergeInto(LibraryManager.library, {
+  // Call synchronously from a tap/key handler so mobile browsers unlock audio.
+  RNBO_ResumeAudioOnGesture: function() {
+    if (!window.__lautirRnbo) {
+      window.__lautirRnbo = {
+        instances: {},
+        patcherCache: {},
+        depsCache: {},
+        audioContext: null
+      };
+    }
+    const st = window.__lautirRnbo;
+    if (!st.audioContext) {
+      const WAContext = window.AudioContext || window.webkitAudioContext;
+      st.audioContext = new WAContext();
+    }
+    if (st.audioContext.state !== "running") {
+      st.audioContext.resume();
+    }
+  },
+
   RNBO_Init: function(instanceIndex, patcherUrlPtr, depsUrlPtr) {
     const patcherUrl = UTF8ToString(patcherUrlPtr);
     const depsUrl = UTF8ToString(depsUrlPtr);
@@ -60,13 +80,17 @@ mergeInto(LibraryManager.library, {
 
       let patcher = st.patcherCache[patcherUrl];
       if (!patcher) {
-        patcher = await (await fetch(patcherUrl)).json();
+        const patchRes = await fetch(patcherUrl);
+        if (!patchRes.ok) throw new Error("patcher fetch failed: " + patcherUrl + " (" + patchRes.status + ")");
+        patcher = await patchRes.json();
         st.patcherCache[patcherUrl] = patcher;
       }
 
       let deps = st.depsCache[depsUrl];
       if (!deps) {
-        deps = await (await fetch(depsUrl)).json();
+        const depsRes = await fetch(depsUrl);
+        if (!depsRes.ok) throw new Error("deps fetch failed: " + depsUrl + " (" + depsRes.status + ")");
+        deps = await depsRes.json();
         st.depsCache[depsUrl] = deps;
       }
 

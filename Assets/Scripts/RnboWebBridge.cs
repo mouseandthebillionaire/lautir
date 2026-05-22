@@ -9,11 +9,15 @@ using UnityEngine;
 public static class RnboWebBridge
 {
 #if UNITY_WEBGL && !UNITY_EDITOR
+    [DllImport("__Internal")] static extern void RNBO_ResumeAudioOnGesture();
     [DllImport("__Internal")] static extern void RNBO_Init(int instanceIndex, string patcherUrl, string depsUrl);
     [DllImport("__Internal")] static extern int RNBO_IsReady(int instanceIndex);
     [DllImport("__Internal")] static extern IntPtr RNBO_LastError(int instanceIndex);
     [DllImport("__Internal")] static extern int RNBO_SetParamById(int instanceIndex, string paramId, double value);
     [DllImport("__Internal")] static extern int RNBO_SendMessage(int instanceIndex, string tag, double value);
+
+    /// <summary>Must run in the same frame as the user's tap/key (before any yield).</summary>
+    public static void ResumeAudioOnUserGesture() => RNBO_ResumeAudioOnGesture();
 
     public static void Init(int instanceIndex, string patcherUrl, string depsUrl) =>
         RNBO_Init(instanceIndex, patcherUrl, depsUrl);
@@ -32,6 +36,7 @@ public static class RnboWebBridge
     public static bool SendMessage(int instanceIndex, string tag, double value) =>
         RNBO_SendMessage(instanceIndex, tag, value) != 0;
 #else
+    public static void ResumeAudioOnUserGesture() { }
     public static void Init(int instanceIndex, string patcherUrl, string depsUrl) { }
     public static bool IsReady(int instanceIndex) => false;
 
