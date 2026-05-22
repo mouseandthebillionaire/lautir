@@ -10,8 +10,6 @@ using UnityEngine.EventSystems;
 
 public class MelodyScript : MonoBehaviour
 {
-    [Tooltip("Optional debug indicator; leave unassigned in production builds.")]
-    public UnityEngine.UI.Image touchTester;
     
     // Must match the RNBO device / mixer "Instance Index" in the scene.
     public int instanceIndex = 1;
@@ -43,7 +41,6 @@ public class MelodyScript : MonoBehaviour
     public int rightDelay = 400;
     public float feedback = 0.5f;
 
-    [Tooltip("On phone/tablet, tap the screen (outside UI) to trigger, same as Space.")]
     public bool tapToTriggerOnMobile = true;
 
     bool melodyRunning;
@@ -94,43 +91,11 @@ public class MelodyScript : MonoBehaviour
 #endif
     }
 
-    void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.Space))
-            TryTriggerMelody(debugColor: Color.green);
-
-        if (tapToTriggerOnMobile && WasMobileTapThisFrame())
-            TryTriggerMelody(debugColor: Color.red);
-    }
-
-    static bool IsMobileLike() =>
-        Application.isMobilePlatform || SystemInfo.deviceType == DeviceType.Handheld;
-
-    bool WasMobileTapThisFrame()
-    {
-        if (!IsMobileLike() || Input.touchCount == 0)
-            return false;
-
-        Touch t = Input.GetTouch(0);
-        if (t.phase != TouchPhase.Began)
-            return false;
-
-#if UNITY_WEBGL && !UNITY_EDITOR
-        // fingerId overload can crash WebGL wasm; use parameterless check only.
-        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
-            return false;
-#endif
-        return true;
-    }
-
-    void TryTriggerMelody(Color? debugColor = null)
+    public void TriggerMelody()
     {
         if (melodyRunning) return;
-        if (debugColor.HasValue && touchTester != null)
-            touchTester.color = debugColor.Value;
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-        // Unlock AudioContext in the gesture stack (iOS/Safari requires this).
         RnboWebBridge.ResumeAudioOnUserGesture();
         if (!RnboWebBridge.IsReady(instanceIndex) && !webInitStarted)
         {
