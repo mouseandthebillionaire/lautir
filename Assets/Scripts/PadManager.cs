@@ -28,10 +28,37 @@ public class PadManager : MonoBehaviour
     private float midPan;
     private float ampPan;
 
-    void Start()
+    void Awake()
     {
         padNotes = GetComponentsInChildren<AudioSource>();
-        StartCoroutine(Fluctuate());
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // PlayOnAwake runs before WebGL decodes clips → "length of sound which is not loaded yet".
+        foreach (var src in padNotes)
+            src.playOnAwake = false;
+#endif
+    }
+
+    void Start()
+    {
+        StartCoroutine(StartPadsThenFluctuate());
+    }
+
+    IEnumerator StartPadsThenFluctuate()
+    {
+#if UNITY_WEBGL && !UNITY_EDITOR
+        foreach (var src in padNotes)
+        {
+            var clip = src.clip;
+            if (clip == null) continue;
+            if (clip.loadState == AudioDataLoadState.Unloaded)
+                clip.LoadAudioData();
+            while (clip.loadState == AudioDataLoadState.Loading)
+                yield return null;
+            if (!src.isPlaying)
+                src.Play();
+        }
+#endif
+        yield return Fluctuate();
     }
 
     private IEnumerator Fluctuate()

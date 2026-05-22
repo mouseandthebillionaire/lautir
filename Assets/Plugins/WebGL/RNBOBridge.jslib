@@ -106,8 +106,11 @@ mergeInto(LibraryManager.library, {
       slot.ready = true;
       slot.lastError = "";
 
-      // transportUsed: true in export — start transport inline (jslib strips top-level helpers).
+      // transportUsed: true — patch sequencer needs transport + tempo (inline; jslib has no top-level helpers).
       const tNow = (typeof RNBO.TimeNow !== "undefined" && RNBO.TimeNow !== null) ? RNBO.TimeNow : 0;
+      if (RNBO.TempoEvent) {
+        device.scheduleEvent(new RNBO.TempoEvent(tNow, 60));
+      }
       if (RNBO.TransportEvent) {
         device.scheduleEvent(new RNBO.TransportEvent(tNow, 1));
         console.log("[LAUTIR] Transport running (instance " + instanceIndex + ")");
@@ -173,6 +176,9 @@ mergeInto(LibraryManager.library, {
     }
 
     const tNow = (typeof RNBO.TimeNow !== "undefined" && RNBO.TimeNow !== null) ? RNBO.TimeNow : 0;
+    if (RNBO.TempoEvent) {
+      slot.device.scheduleEvent(new RNBO.TempoEvent(tNow, 60));
+    }
     if (RNBO.TransportEvent) {
       slot.device.scheduleEvent(new RNBO.TransportEvent(tNow, 1));
     }
