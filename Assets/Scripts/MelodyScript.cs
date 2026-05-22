@@ -1,15 +1,17 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using Cycling74.RNBOTypes;
-using UnityEngine.UI;
+#if UNITY_WEBGL && !UNITY_EDITOR
+using UnityEngine.EventSystems;
+#endif
+
 // Drives the RNBO patch: random phrase/density/melody, wait, then trigger playback.
-// Editor / standalone: native uses LautirSynth8Handle. 
-// WebGL: uses RnboWebBridge + JS export next to the build.
+// Editor / standalone: native LautirSynthHandle. WebGL: RnboWebBridge + JS export.
 
 public class MelodyScript : MonoBehaviour
 {
-    public Image touchTester;
+    [Tooltip("Optional debug indicator; leave unassigned in production builds.")]
+    public UnityEngine.UI.Image touchTester;
     
     // Must match the RNBO device / mixer "Instance Index" in the scene.
     public int instanceIndex = 1;
@@ -84,14 +86,46 @@ public class MelodyScript : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Space)) {
-            touchTester.color = Color.green;
-            StartCoroutine(RandomizeMelody());
-        }
-        if (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began) {
-            touchTester.color = Color.red;
-            StartCoroutine(RandomizeMelody());
-        }
+        if (Input.GetKeyDown(KeyCode.Space))
+            TryTriggerMelody(debugColor: Color.green);
+
+        if (tapToTriggerOnMobile && WasMobileTapThisFrame())
+            TryTriggerMelody(debugColor: Color.red);
+    }
+
+    static bool IsMobileLike() =>
+        Application.isMobilePlatform || SystemInfo.deviceType == DeviceType.Handheld;
+
+    bool WasMobileTapThisFrame()
+    {
+        if (!IsMobileLike() || Input.touchCount == 0)
+            return false;
+
+        Touch t = Input.GetTouch(0);
+        if (t.phase != TouchPhase.Began)
+            return false;
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // fingerId overload can crash WebGL wasm; use parameterless check only.
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            return false;
+#endif
+        return true;
+    }
+
+    void TryTriggerMelody(Color? debugColor = null)
+    {
+        if (melodyRunning) return;
+        if (debugColor.HasValue && touchTester != null)
+            touchTester.color = debugColor.Value;
+        StartCoroutine(RandomizeMelodyWrapper());
+    }
+
+    IEnumerator RandomizeMelodyWrapper()
+    {
+        melodyRunning = true;
+        yield return RandomizeMelody();
+        melodyRunning = false;
     }
 
     public IEnumerator RandomizeMelody()
