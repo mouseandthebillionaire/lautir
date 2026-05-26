@@ -88,9 +88,49 @@ One random side note (that might be important later): I'm realizing that with th
 
 But for now, focusing on sweeting the sound.
 
+## 05.26.26 | That Sounds (Better!)
+
+And now the fun task of trying to convey sonic changes in a visual way! 
+
+Rewrote the synth from scratch and built in polyphony. It's got a real gamey-wamey sound to it right now which I think probably fits the bill. Definitely sounds better without sounding like it's taking itself too seriously. 
+
+I realized as I was working in the Max patch that in general this thing will sound better with looping audio. I liked the idea of each word contributing to a unique musical phrase, but I think it just makes more sense to have them as looping patterns. This opens up the opportunity to have each word responsible for a given "instrument" in the track. 
+
+[Pattern Melody Demo](https://mouseandthebillionaire.github.io/lautir/melodyTest_v2/)
+
+This version randomizes the values of two different instruments. 
+
+```
+// Set Phrase Length  
+int[] availablePhrases = new int[] { 4, 8, 16, 32 };  
+phraseLength = availablePhrases[Random.Range(0, availablePhrases.Length)];  
+// Set Note Density  
+noteDensity = Random.Range(1, 8);  
+// Set Melody  
+melody = Random.Range(0, 27);  
+// Set Timbre  
+timbre = Random.Range(0, 1000);  
+// Set Note (RNBO param range 1–4)  
+note = Random.Range(1, 5);  
+// Set Left Delay  
+leftDelay = Random.Range(100, 1000);  
+// Set Right Delay  
+rightDelay = Random.Range(100, 1000);
+```
+
+So far most of these mesh up pretty well together. There might be some cases that we want to specifically avoid, but nothing is too atrocious.
+
+So, moving forward I'm thinking that that two of the words will contribute to these two instruments. One could do a bass line? One could do the overall sonic colour / underlying pad?[^3] I'll start there and see how it feels.
+
+Additionally, talked about this at the MaDe meeting last week, and we discussed other options than the circles. I will implement something that is more of a layered image that reveals itself as it gets closer to the time. Though also I like the idea of the circles being more active and moving around the space when we are further from time, and settling down as we get closer. I will do a prototype of that as well.
+
+Keep it moving!
+
+---
 ## Notes
 
 [^1]: I actually reallllly like this idea. This also opens it up for being a defined length. Come back for seven days and you get a little thing at the end. Also reminds me a bit of the [A Series of Questions](https://github.com/mouseandthebillionaire/_sonicCharacteristics) project, but shoot me if I ever try and do audio-export from Unity again. Famous last words!
 
 [^2]: 14:24 in this specific version
-	
+
+[^3]: Though the question of how it will feel for the user to enter a word and only hearing a pad being played (if we start with that) is an important one
