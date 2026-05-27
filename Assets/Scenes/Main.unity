@@ -1992,7 +1992,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &927669007
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2326,8 +2326,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 201326591
-  m_fontColor: {r: 1, g: 1, b: 1, a: 0.043137256}
+    rgba: 436207615
+  m_fontColor: {r: 1, g: 1, b: 1, a: 0.09803922}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -2454,7 +2454,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   backgroundObjectPrefab: {fileID: 4939241366233209134, guid: e8cd9576bf5394e7bb5df2d79f1d5324, type: 3}
-  numberOfObjects: 0
+  numberOfObjects: 30
 --- !u!1001 &1076102825
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3523,12 +3523,12 @@ MonoBehaviour:
   informationText: {fileID: 0}
   fader: {fileID: 582086080}
   fadeDuration: 1
-  availableHour: 16
-  availableMinute: 46
+  availableHour: 7
+  availableMinute: 53
   secondsAdjustment: 0
   durationMinutes: 10
   eventMinutes: 2
-  enforceTimeWindow: 0
+  enforceTimeWindow: 1
   startTime: 0
 --- !u!1 &1548702009
 GameObject:

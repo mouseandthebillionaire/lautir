@@ -3,7 +3,6 @@ using TMPro;
 using System.Collections;
 using System.Collections.Generic;
 
-/// <summary>Renders the six saved words from <see cref="WordInputManager"/>.</summary>
 public class WordDisplay : MonoBehaviour
 {
     private TMP_Text wordText;
@@ -39,9 +38,9 @@ public class WordDisplay : MonoBehaviour
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            wordText.alpha = Mathf.Lerp(0f, 1f, elapsed / duration);
+            wordText.alpha = Mathf.Lerp(0f, 0.1f, elapsed / duration);
             yield return null;
         }
-        wordText.alpha = 1f;
+        wordText.alpha = 0.1f;
     }
 }

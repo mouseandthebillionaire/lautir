@@ -111,4 +111,7 @@ MonoBehaviour:
   properOpacity: 1
   awayOpacity: 0.2
   approachCurvePower: 0.2
+  wanderDistance: 10
+  wanderSpeed: 0.5
+  additiveShader: {fileID: 0}
   frameRate: 10
