@@ -126,6 +126,22 @@ Additionally, talked about this at the MaDe meeting last week, and we discussed 
 
 Keep it moving!
 
+## 05.27.26 | That Looks... Interesting?
+
+Tried a few different permutations of the alignment prototypes.
+
+![Wandering Circles](Media/wanderers.gif)
+Circles on the roam. As they move towards "home" at the designated time, they cease their wandering ways.
+
+![Illustration Rotating](Media/illustrationAlignment.gif)
+Illustrated image drawn over multiple layers becomes aligned as we approach the correct time
+
+![Photograph Rotating](Media/photoAlignment.gif)
+Photo split into multiple layers with randomized pixels (the [IE](https://github.com/mouseandthebillionaire/losFinisCDE) and [Eikon](https://github.com/mouseandthebillionaire/eikon) technique) that becomes legible as we approach time.
+
+![Both Illustration and Photo](Media/photoAndIllustration.gif)
+Both!
+
 ---
 ## Notes
 
