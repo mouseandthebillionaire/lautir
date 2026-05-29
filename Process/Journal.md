@@ -146,6 +146,26 @@ Photo split into multiple layers with randomized pixels (the [IE](https://github
 
 Both!
 
+## 05.29.26 | Enter Here. Don't Abandon Hope!
+
+[Entering Test](https://mouseandthebillionaire.github.io/lautir/enterTest/)
+
+In order to really get a feel for the core mechanic here (wait some amount of time, enter word, hear some audio that corresponds to the word, \[possibly reflect!]) I built a version that automatically load when you load the page. You still need to wait somewhere between 30-90 seconds, and I think that definitely gets some of the feeling across. I am also enjoying hearing the melody as the circles move from their 'home' location. 
+
+Some thoughts:
+
+- Does the music play all the time once you have entered a word, or is it only for a limited time? Limited time makes it more special, but all the time means you can come back at other times of the day to hear your song. Both have their upsides. The big thing I am seeing now with this choice is that I think there will be radically different UI experiences between the two. Right now the 'enter word, music starts playing as circles leave their alignment' works. But as soon as you have a limited time, I don't think it does. I can imagine an experience where everything fades to black (or just the circles fade out and the background changes) to delineate a _different_ aspect of the experience. Then maybe the words are presented one by one, as the song is built up. Could be more powerful? More ritualistic?
+- It's nice hearing the single word's melody, but already I am eager to try a version where you get to a hear a second word. A little bit of backend programming and reorg is required to make that work, so it might not be possible until later next week.
+
+Lastly, feels important to lay out _exactly_ how the word is being mapped to the sounds. As discussed in the MaDe meeting last week, I am assuming that this will be hodden from the user, but it's good to have it noted down for the curious. These are obviously all subject to change, but for now:
+
+- The first letter picks between a phrase length of 32, 16, 8, and 4 notes based on how common the letter is in the English language. Currently this is set as: e t a o i n s r h l d c u m f p g w y b v k x j q z.[^4] e t a o = 32, i n s r = 16, etc
+- The second letter controls how dense the music is based on the same commonality index. The less common the letter, the more notes are removed from the phrase.
+- The third letter controls the melody. I have pre-written and loaded 25 unique melodies into the Max/RNBO patch, and they are just picked based on the letters alphabet number order.
+- The fourth letter maps the timbre on a 0-1000 scale based on the position in the alphabet (letter order * 40) - There is definitely an opportunity here to make qualifying judgments about the letters (the letters that are more round sound less pokey, Z is hella pokey, etc[^5]), but this works for now.
+- The second letter also controls the length of the notes (half, quarter, eighth, sixteenth) because it seemed to make sense to line that up with density
+- The alphabetical distance between the first and fifth letters and second and sixth letters controls the left delay and right delay, respectively. So as of now, the fifth and sixth letters aren't directly controlling any parameter. Obviously there's room then for even more variety here. But I came up wth this idea of comparing the relationship to different letters within the word as I was writing the code, and that felt like a fun idea to try out.
+
 ---
 ## Notes
 
@@ -154,3 +174,8 @@ Both!
 [^2]: 14:24 in this specific version
 
 [^3]: Though the question of how it will feel for the user to enter a word and only hearing a pad being played (if we start with that) is an important one
+
+[^4]: Though it might be worth it to think about how common a letter is for a specific PLACE in the word (i.e the first letter in a word) as noted here: https://mathcenter.oxford.emory.edu/site/math125/englishLetterFreqs/
+
+[^5]: [Bouba/Kiki-style](https://en.wikipedia.org/wiki/Bouba/kiki_effect)
+

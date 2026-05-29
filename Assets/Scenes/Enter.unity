@@ -3853,8 +3853,8 @@ MonoBehaviour:
   availableMinute: 35
   availableDuration: 5
   waitTime: 0
-  waitMin: 30
-  waitMax: 90
+  waitMin: 0
+  waitMax: 10
   waitTimeRemaining: 0
   eventMinutes: 2
   preAlignmentBlend: 0.8
