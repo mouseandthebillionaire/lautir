@@ -16,8 +16,12 @@ public class AudioManager : MonoBehaviour
     const float CutoffHzMin = 200f;
     const float CutoffHzMax = 5000f;
 
+    public static AudioManager S;
+
     void Awake()
     {
+        S = this;
+
         if (melodyScripts == null || melodyScripts.Length == 0)
             melodyScripts = GetComponentsInChildren<MelodyScript>(true);
     }
@@ -43,6 +47,15 @@ public class AudioManager : MonoBehaviour
         {
             if (melody != null)
                 melody.TriggerMelody();
+        }
+    }
+
+    public void ParseWord(string word)
+    {
+        foreach (var melody in melodyScripts)
+        {
+            if (melody != null)
+                melody.ParseWord(word);
         }
     }
 }

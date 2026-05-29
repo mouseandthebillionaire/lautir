@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Linq;
 using UnityEngine;
 using Cycling74.RNBOTypes;
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -42,6 +43,8 @@ public class MelodyScript : MonoBehaviour
     public float feedback = 0.5f;
 
     public bool tapToTriggerOnMobile = true;
+
+    public char[] letters;
 
     bool melodyRunning;
 
@@ -91,6 +94,7 @@ public class MelodyScript : MonoBehaviour
 #endif
     }
 
+    // Simple trigger that will randomize the melody
     public void TriggerMelody()
     {
         if (melodyRunning) return;
@@ -124,7 +128,7 @@ public class MelodyScript : MonoBehaviour
         // Set Note Density
         noteDensity = Random.Range(1, 8);
         // Set Melody
-        melody = Random.Range(0, 27);
+        melody = Random.Range(0, 25);
         // Set Timbre
         timbre = Random.Range(0, 1000);
         // Set Note (RNBO param range 1–4)
@@ -134,9 +138,82 @@ public class MelodyScript : MonoBehaviour
         // Set Right Delay
         rightDelay = Random.Range(100, 1000);
 
+        // Play the melody
+        yield return PlayMelody();
+    }
 
+    // More complicated trigger that will parse a word and trigger the melody
 
+    public void ParseWord(string word)
+    {
+        if (word == null || word.Length == 0) return;
+        this.letters = word.ToCharArray();
 
+#if UNITY_WEBGL && !UNITY_EDITOR
+        RnboWebBridge.ResumeAudioOnUserGesture();
+        if (!RnboWebBridge.IsReady(instanceIndex) && !webInitStarted)
+        {
+            webInitStarted = true;
+            RnboWebBridge.Init(instanceIndex, WebPatcherUrl, WebDepsUrl);
+        }
+#endif
+
+        StartCoroutine(WordToMelodyWrapper());  
+    }
+
+    IEnumerator WordToMelodyWrapper()
+    {
+        melodyRunning = true;
+        yield return WordToMelody();
+        melodyRunning = false;
+    }
+
+    public IEnumerator WordToMelody()
+    {
+        // First things first: set the values for all of these parameters
+
+        // Letter Commonality for a bunch of these
+        char[] letterCommonality = new char[] { 'e', 't', 'a', 'o', 'i', 'n', 's', 'r', 'h', 'd', 'l', 'u', 'c', 'm', 'f', 'y', 'w', 'g', 'p', 'b', 'v', 'k', 'x', 'q', 'j', 'z' };
+        
+        // Set Phrase Length based on the first letter in the word
+        int[] availablePhrases = new int[] { 32, 16, 8, 4 };
+        // The most common letters happen more often, the least common happen less often
+        int letterIndex = System.Array.IndexOf(letterCommonality, char.ToLowerInvariant(letters[0]));
+        phraseLength = availablePhrases[letterIndex / 7];
+        
+        // Set Note Density based on the second letter of the word
+        // The most common letters have the highest density, the least common have the lowest
+        int densityIndex = System.Array.IndexOf(letterCommonality, char.ToLowerInvariant(letters[1]));
+        noteDensity = densityIndex / 4;
+        
+        // Set Melody based on third letter of the word
+        melody = char.ToLowerInvariant(letters[2]) - 'a';
+        
+        // Set Timbre based on 4th letters position along the alphabet
+        timbre = (char.ToLowerInvariant(letters[3]) - 'a') * 40;
+        
+        // Set NoteLength (RNBO param range 1–4)
+        // Should this also be applied to the second letter?
+        // Does it make sense that a more dense melody should have shorter notes?
+        // letterCommonality needs ot be flipped so that the most common letters get the shortest notes
+        int noteIndex = System.Array.IndexOf(letterCommonality.Reverse().ToArray(), char.ToLowerInvariant(letters[1]));
+        note = noteIndex / 7 + 1;
+        
+        // Set Left Delay based on distance between first and fifth letter?
+        // Needs to be an absolute value
+        int delayDistance = Mathf.Abs(char.ToLowerInvariant(letters[4]) - char.ToLowerInvariant(letters[0]));
+        leftDelay = 100 + (delayDistance * 36);
+        
+        // Set Right Delay based on distance between second and sixth letter?
+        // Needs to be an absolute value
+        delayDistance = Mathf.Abs(char.ToLowerInvariant(letters[5]) - char.ToLowerInvariant(letters[1]));
+        rightDelay = 100 + (delayDistance * 36);
+
+        // Play the melody
+        yield return PlayMelody();
+    }
+
+    private IEnumerator PlayMelody(){
 #if UNITY_WEBGL && !UNITY_EDITOR
         float t0 = Time.realtimeSinceStartup;
         while (!RnboWebBridge.IsReady(instanceIndex) && Time.realtimeSinceStartup - t0 < WebInitTimeoutSeconds)
@@ -189,7 +266,7 @@ public class MelodyScript : MonoBehaviour
             lautirSynthHandle.SetParamValue(rightDelayParam, rightDelay);
             lautirSynthHandle.SetParamValue(feedbackParam, feedback);
 
-            Debug.Log($"{instanceIndex}:{phraseLength}:{noteDensity}:{melody}:{timbre}:{note}");
+            Debug.Log($"{instanceIndex}:{phraseLength}:{noteDensity}:{melody}:{timbre}:{note}:{leftDelay}:{rightDelay}");
             
             // Wait for 1 second
             yield return new WaitForSeconds(1f);

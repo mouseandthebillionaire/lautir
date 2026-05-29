@@ -5,9 +5,6 @@ using TMPro;
 using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
-/// <summary>
-/// Daily availability window, input visibility, and a 0–1 "home" blend for visuals / audio easing.
-/// </summary>
 public class GameManager : MonoBehaviour
 {
     public static GameManager S;
@@ -23,26 +20,46 @@ public class GameManager : MonoBehaviour
 
     public int availableHour = 18;
     public int availableMinute = 0;
-    // Random 0–299 s so the window start varies slightly each run.
-    public int secondsAdjustment = 0;
-    public int durationMinutes = 5;
-    // Minutes used to ease toward / away from the window in GetAvailabilityHomeBlend.
+    // How long (minutes) the game stays available once the countdown finishes.
+    public int availableDuration = 5;
+
+    // Per-session delay (seconds) the user must wait AFTER reaching the open window.
+    public int waitTime = 0;
+    public int waitMin = 0;
+    public int waitMax = 300;
+    public int waitTimeRemaining = 0;
+
+    // Minutes used to sharpen the final ramp into the window and out after it ends.
     public int eventMinutes = 2;
+    // Blend value (0 = scattered, 1 = home) at the moment the final countdown BEGINS.
+    // The 12h approach eases up to this value, then the countdown carries it the rest of the
+    // way to 1. Lower it to make the countdown a more visibly dramatic "moving into place".
+    [Range(0f, 1f)] public float preAlignmentBlend = 0.4f;
+    // Minutes over which the circles slowly drift back to their Far locations after closing.
+    public float awayRampMinutes = 720f;
+    // Ease-out curve for the drift away. Lower = snappier initial departure; higher = gentler.
+    [Range(0.05f, 1f)] public float awayCurvePower = 0.5f;
 
     public bool enforceTimeWindow = true;
-    bool? _gameAvailableOverride;
-    // Set when the user submits a word so the "away" ramp can use that moment.
+    private bool gameAvailable = false;
+
+    public bool IsGameAvailable => gameAvailable;
+
+    // WaitingForWindow → CountingDown → Available → Closed
+    enum Phase { WaitingForWindow, CountingDown, Available, Closed }
+    Phase _phase = Phase.WaitingForWindow;
+
+    float _countdownStartRealtime;
+    float _availableStartRealtime;
+    float _closedStartRealtime;
+    // Set when the game closes (word entry or duration) so the "away" ramp can use that moment.
     DateTime? _userWindowEndTime;
-
-    public bool IsGameAvailable => _gameAvailableOverride ?? (!enforceTimeWindow || IsWithinAvailabilityWindow());
-
-    bool _wasGameAvailable;
-
-    public float startTime;
 
     void Awake()
     {
         S = this;
+        // Display-only text shouldn't intercept clicks meant for the input field.
+        if (informationText != null) informationText.raycastTarget = false;
     }
 
     void Start()
@@ -50,34 +67,42 @@ public class GameManager : MonoBehaviour
         if (wipeExistingWords) {
             WipeExistingWords();
         }
-        
-        secondsAdjustment = Random.Range(0, 300);
-        _wasGameAvailable = IsGameAvailable;
-        // Show input immediately if we boot already inside the window (any script order).
-        if (_wasGameAvailable && WordInputManager.S != null)
-            WordInputManager.S.ShowInputField();
+
+        // Set the random wait time for this session.
+        waitTime = Random.Range(waitMin, waitMax);
+        waitTimeRemaining = waitTime;
 
         // Fade in the game
+        fader.raycastTarget = false;
         StartCoroutine(FadeInGame());
     }
 
     void Update()
     {
-        bool nowAvailable = IsGameAvailable;
-
-        if (!_wasGameAvailable && nowAvailable)
+        switch (_phase)
         {
-            if (WordInputManager.S != null)
-                WordInputManager.S.ShowInputField();
-            _userWindowEndTime = null;
-        }
-        else if (_wasGameAvailable && !nowAvailable)
-        {
-            if (WordInputManager.S != null)
-                WordInputManager.S.HideInputField();
-        }
+            case Phase.WaitingForWindow:
+                // Start the countdown once we reach the window (or window isn't enforced).
+                if (IsWithinAvailabilityWindow() || !enforceTimeWindow)
+                {
+                    _countdownStartRealtime = Time.realtimeSinceStartup;
+                    _phase = Phase.CountingDown;
+                }
+                break;
 
-        _wasGameAvailable = nowAvailable;
+            case Phase.CountingDown:
+                FinalCountdown();
+                break;
+
+            case Phase.Available:
+                // Auto-close once the available duration has passed.
+                if (Time.realtimeSinceStartup - _availableStartRealtime >= availableDuration * 60f)
+                    SetGameAvailable(false);
+                break;
+
+            case Phase.Closed:
+                break;
+        }
     }
 
     // fade int he game each time
@@ -99,14 +124,32 @@ public class GameManager : MonoBehaviour
             yield return null;
         }
         fader.color = new Color(fader.color.r, fader.color.g, fader.color.b, 0f);
+        
     }
 
     bool IsWithinAvailabilityWindow()
     {
         var now = DateTime.Now.TimeOfDay;
-        var start = new TimeSpan(availableHour, availableMinute, secondsAdjustment);
-        var end = start + TimeSpan.FromMinutes(durationMinutes);
+        var start = new TimeSpan(availableHour, availableMinute, 0);
+        var end = start + TimeSpan.FromMinutes(availableDuration);
         return now >= start && now <= end;
+    }
+
+    // Runs every frame while counting down. When the random waitTime elapses, the game opens.
+    private void FinalCountdown()
+    {
+        float elapsed = Time.realtimeSinceStartup - _countdownStartRealtime;
+        waitTimeRemaining = Mathf.Max(0, Mathf.CeilToInt(waitTime - elapsed));
+
+        if (elapsed >= waitTime)
+            SetGameAvailable(true);
+    }
+
+    // 0 → countdown just started, 1 → countdown finished (final alignment progress).
+    float CountdownProgress01()
+    {
+        if (waitTime <= 0) return 1f;
+        return Mathf.Clamp01((Time.realtimeSinceStartup - _countdownStartRealtime) / waitTime);
     }
 
     /// <summary>Minutes until the next window opens (0 if already available).</summary>
@@ -114,7 +157,7 @@ public class GameManager : MonoBehaviour
     {
         if (IsGameAvailable) return 0;
         var now = DateTime.Now;
-        var todayStart = new DateTime(now.Year, now.Month, now.Day, availableHour, availableMinute, 0).AddSeconds(secondsAdjustment);
+        var todayStart = new DateTime(now.Year, now.Month, now.Day, availableHour, availableMinute, 0);
         if (now < todayStart)
             return (todayStart - now).TotalMinutes;
         var tomorrowStart = todayStart.AddDays(1);
@@ -126,20 +169,15 @@ public class GameManager : MonoBehaviour
     {
         if (IsGameAvailable) return 0;
         var now = DateTime.Now;
-        var todayStart = new DateTime(now.Year, now.Month, now.Day, availableHour, availableMinute, 0).AddSeconds(secondsAdjustment);
-        var windowEnd = todayStart.AddMinutes(durationMinutes);
+        var todayStart = new DateTime(now.Year, now.Month, now.Day, availableHour, availableMinute, 0);
+        var windowEnd = todayStart.AddMinutes(availableDuration);
         if (now >= windowEnd)
             return (now - windowEnd).TotalMinutes;
-        var yesterdayEnd = todayStart.AddDays(-1).AddMinutes(durationMinutes);
+        var yesterdayEnd = todayStart.AddDays(-1).AddMinutes(availableDuration);
         return (now - yesterdayEnd).TotalMinutes;
     }
 
-    public void NotifyUserEndedWindow(DateTime atTime)
-    {
-        _userWindowEndTime = atTime;
-    }
-
-    /// <summary>Minutes since effective end: word entry time if set, else scheduled end.</summary>
+    /// <summary>Minutes since effective end: word entry / close time if set, else scheduled end.</summary>
     public double MinutesSinceEffectiveWindowEnd()
     {
         if (IsGameAvailable) return 0;
@@ -157,23 +195,39 @@ public class GameManager : MonoBehaviour
         if (_userWindowEndTime.HasValue)
             return _userWindowEndTime.Value.TimeOfDay.TotalMinutes;
         var now = DateTime.Now;
-        var scheduledEnd = new DateTime(now.Year, now.Month, now.Day, availableHour, availableMinute, 0).AddSeconds(secondsAdjustment).AddMinutes(durationMinutes);
+        var scheduledEnd = new DateTime(now.Year, now.Month, now.Day, availableHour, availableMinute, 0).AddMinutes(availableDuration);
         return scheduledEnd.TimeOfDay.TotalMinutes;
     }
 
-    public void SetGameAvailable(bool available)
-    {
-        _gameAvailableOverride = available;
-    }
-
     /// <summary>
-    /// 1 = fully "home" (aligned), 0 = furthest away. Circles ease over 12h before/after the daily anchor;
-    /// <paramref name="eventMinutes"/> sharpens the last minutes into the window and out after it ends.
+    /// 1 = fully "home" (aligned), 0 = furthest away. Circles ease over 12h before/after the daily
+    /// anchor; the approach tops out at preAlignmentBlend, and the final countdown finishes alignment.
     /// </summary>
     public float GetAvailabilityHomeBlend(float approachCurvePower = 1f)
     {
-        if (!enforceTimeWindow || IsGameAvailable)
+        // Fully home while the game is open.
+        if (gameAvailable)
             return 1f;
+
+        // Final alignment phase: ease preAlignmentBlend → 1 across the random countdown.
+        // Checked before the enforceTimeWindow shortcut so the countdown is always honored.
+        if (_phase == Phase.CountingDown)
+            return Mathf.Lerp(preAlignmentBlend, 1f, CountdownProgress01());
+
+        // After closing (word entered or duration elapsed): slowly drift home → away.
+        // Starts at 1 and eases toward 0 over awayRampMinutes, so circles ease back to Far.
+        if (_phase == Phase.Closed)
+        {
+            float minutesSinceClose = (Time.realtimeSinceStartup - _closedStartRealtime) / 60f;
+            float t = awayRampMinutes <= 0f ? 1f : Mathf.Clamp01(minutesSinceClose / awayRampMinutes);
+            float awayPow = Mathf.Clamp(awayCurvePower, 0.05f, 1f);
+            // Move away quickly at first, then slow down as the circles get further out (ease-out).
+            return 1f - Mathf.Pow(t, awayPow);
+        }
+
+        // No time window enforced and not yet counting/available: treat as scattered.
+        if (!enforceTimeWindow)
+            return 0f;
 
         const float halfCycleMinutes = 720f; // 12h scattered ↔ 12h approaching home
         float rampMinutes = Mathf.Max(0.01f, eventMinutes);
@@ -201,7 +255,8 @@ public class GameManager : MonoBehaviour
             return tCurve;
         }
 
-        // 12h before window → ease away → home; linger away, then final ramp into the window.
+        // 12h before window → ease away → home; linger away, then final ramp toward the window.
+        // The approach tops out at preAlignmentBlend; the countdown finishes alignment.
         float rawReturn = Mathf.Clamp01(minutesUntil / halfCycleMinutes);
         float tReturn = 1f - Mathf.Pow(rawReturn, approachCurvePower);
 
@@ -209,10 +264,40 @@ public class GameManager : MonoBehaviour
         {
             float tAtRampStart = 1f - Mathf.Pow(rampMinutes / halfCycleMinutes, approachCurvePower);
             float rampT = 1f - minutesUntil / rampMinutes;
-            return Mathf.Lerp(tAtRampStart, 1f, rampT);
+            return Mathf.Lerp(tAtRampStart, 1f, rampT) * preAlignmentBlend;
         }
 
-        return tReturn;
+        return tReturn * preAlignmentBlend;
+    }
+
+    // Flip availability: called after the countdown, from WordInputManager on word entry, or on auto-close.
+    public void SetGameAvailable(bool available)
+    {
+        gameAvailable = available;
+
+        if (available)
+        {
+            _availableStartRealtime = Time.realtimeSinceStartup;
+            _phase = Phase.Available;
+            if (WordInputManager.S != null)
+                WordInputManager.S.ShowInputField();
+        }
+        else
+        {
+            // Record the close moment (if not already set by word entry) so the away ramp starts here.
+            if (!_userWindowEndTime.HasValue)
+                _userWindowEndTime = DateTime.Now;
+            _closedStartRealtime = Time.realtimeSinceStartup;
+            _phase = Phase.Closed;
+            if (WordInputManager.S != null)
+                WordInputManager.S.HideInputField();
+        }
+    }
+
+    // Called by WordInputManager when the user submits a word, so the away ramp eases from that moment.
+    public void NotifyUserEndedWindow(DateTime atTime)
+    {
+        _userWindowEndTime = atTime;
     }
 
     void WipeExistingWords()

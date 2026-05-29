@@ -1,6 +1,5 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
-
 --- !u!244 &-4349474503954454112
 AudioMixerEffectController:
   m_ObjectHideFlags: 3
@@ -54,7 +53,7 @@ AudioMixerController:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Main
+  m_Name: MainWebGL
   m_OutputGroup: {fileID: 0}
   m_MasterGroup: {fileID: 24300002}
   m_Snapshots:
@@ -198,7 +197,7 @@ AudioMixerSnapshotController:
     d7b4d53c333a846b2be22f871acbd4f2: 0.4
     c2ca624cc503f4e288436352faa8aac7: 16
     b9db159c3ff1243e2bfeb6887c1b6d77: 1
-    89f907ece2b0842279b4e32382641e6b: -13.63727
+    89f907ece2b0842279b4e32382641e6b: -14.221911
     b8d7a91db177f4f0f81aa0d936450bbb: 3
     1a66368dcb1944f77b1e61f3adf70642: 1
     231b23bd16c5b4e2781b6c74f6164ed0: 2558
@@ -210,6 +209,7 @@ AudioMixerSnapshotController:
     fa6cf41f42c5847339aeb04e1641e679: 1
     68a1723f07d104f74ba74a2270c074c2: 1
     a755315f3c26a40119d511534e846c32: 3
+    2b6f666fb31cd4bdcab47f66d3f2bf97: -0.54210335
     62e2057fe53784d10a55d11f4ec796db: 35960
     e222ab8f5421946658bd226379cbc994: 0.6
     b41003afe43d842dd96d8f03c06acce4: 0.46
@@ -236,7 +236,6 @@ AudioMixerGroupController:
   m_Mute: 1
   m_Solo: 0
   m_BypassEffects: 0
-
 --- !u!243 &4318175080533759621
 AudioMixerGroupController:
   m_ObjectHideFlags: 0
@@ -303,7 +302,7 @@ AudioMixerGroupController:
   - {fileID: 6203390972206639390}
   - {fileID: 5047722506147964010}
   m_UserColorIndex: 0
-  m_Mute: 0
+  m_Mute: 1
   m_Solo: 0
   m_BypassEffects: 0
 --- !u!244 &7965156812015654908

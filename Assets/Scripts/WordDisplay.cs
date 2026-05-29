@@ -13,6 +13,8 @@ public class WordDisplay : MonoBehaviour
     void Awake()
     {
         wordText = GetComponent<TMP_Text>();
+        // Display-only text; must not eat clicks meant for the input field underneath.
+        if (wordText != null) wordText.raycastTarget = false;
         S = this;
     }
 

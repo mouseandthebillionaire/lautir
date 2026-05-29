@@ -193,5 +193,6 @@ public class WordInputManager : MonoBehaviour
         GameManager.S.NotifyUserEndedWindow(DateTime.Now);
         GameManager.S.SetGameAvailable(false);
         HideInputField();
+        AudioManager.S.ParseWord(word);
     }
 }
