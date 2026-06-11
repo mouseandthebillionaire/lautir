@@ -95,18 +95,23 @@ mergeInto(LibraryManager.library, {
         st.depsCache[depsUrl] = deps;
       }
 
-      const device = await RNBO.createDevice({ context: st.audioContext, patcher });
+      const createOpts = { context: st.audioContext, patcher };
+      if (RNBO.ParameterNotificationSetting) {
+        createOpts.options = { parameterNotificationSetting: RNBO.ParameterNotificationSetting.All };
+      }
+      const device = await RNBO.createDevice(createOpts);
       device.node.connect(st.audioContext.destination);
 
       if (device.loadDataBufferDependencies) {
         await device.loadDataBufferDependencies(deps);
       }
 
-      slot.device = device;
-      slot.ready = true;
-      slot.lastError = "";
+      const pulseParam = (id, value) => {
+        const p = device.parametersById && device.parametersById.get ? device.parametersById.get(id) : null;
+        if (p) p.value = value;
+      };
 
-      // transportUsed: true — patch sequencer needs transport + tempo (inline; jslib has no top-level helpers).
+      // loadbang runs during createDevice, often before transport — start transport then re-trigger control params.
       const tNow = (typeof RNBO.TimeNow !== "undefined" && RNBO.TimeNow !== null) ? RNBO.TimeNow : 0;
       if (RNBO.TempoEvent) {
         device.scheduleEvent(new RNBO.TempoEvent(tNow, 60));
@@ -117,6 +122,30 @@ mergeInto(LibraryManager.library, {
       } else {
         console.warn("[LAUTIR] TransportEvent unavailable (instance " + instanceIndex + ")");
       }
+
+      // begin alone routes to noteLogic inlet 1 (bang); note param edge starts noteLogic metros (inlet 0).
+      pulseParam("note", 0);
+      pulseParam("note", 2);
+      pulseParam("begin", 0);
+      pulseParam("begin", 1);
+      console.log("[LAUTIR] begin + note re-triggered after transport (instance " + instanceIndex + ")");
+
+      // Patch uses delay 100–1000 ms before the melody gate opens; pulse again once it should have fired.
+      setTimeout(() => {
+        if (!slot.ready || !slot.device) return;
+        pulseParam("note", 1);
+        pulseParam("note", 2);
+        pulseParam("begin", 0);
+        pulseParam("begin", 1);
+        if (RNBO.MessageEvent) {
+          slot.device.scheduleEvent(new RNBO.MessageEvent(RNBO.TimeNow || 0, "rnboReceive", [1]));
+        }
+        console.log("[LAUTIR] Delayed melody re-trigger (instance " + instanceIndex + ")");
+      }, 1500);
+
+      slot.device = device;
+      slot.ready = true;
+      slot.lastError = "";
 
       console.log("[LAUTIR] RNBO ready instance " + instanceIndex + " | AudioContext=" + st.audioContext.state);
     };

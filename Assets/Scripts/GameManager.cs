@@ -12,6 +12,8 @@ public class GameManager : MonoBehaviour
     // Wipe the existing words from the PlayerPrefs.
     public bool wipeExistingWords = false;
 
+    public int currentDay = 0;
+    
     public TMP_Text informationText;
 
     // Fader
@@ -67,6 +69,10 @@ public class GameManager : MonoBehaviour
         if (wipeExistingWords) {
             WipeExistingWords();
         }
+
+        // What day it is = how many words have been saved so far.
+        currentDay = WordInputManager.SavedWordCount();
+        Debug.Log("Current day: " + currentDay);
 
         // Set the random wait time for this session.
         waitTime = Random.Range(waitMin, waitMax);
@@ -304,7 +310,6 @@ public class GameManager : MonoBehaviour
     {
         PlayerPrefs.DeleteKey("lautir_words");
         PlayerPrefs.Save();
-        WordDisplay.S.DisplayWords();
         WordInputManager.S.ClearSavedWords();
         wipeExistingWords = false;
     }

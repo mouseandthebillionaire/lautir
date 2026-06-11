@@ -20,6 +20,18 @@ public class WordInputManager : MonoBehaviour
 
     public List<string> words;
 
+    /// <summary>Number of non-empty saved words (saturates at <see cref="SavedWordDaysCount"/>).</summary>
+    public static int SavedWordCount()
+    {
+        int count = 0;
+        foreach (var w in LoadWords())
+            if (!string.IsNullOrEmpty(w)) count++;
+        return count;
+    }
+
+    /// <summary>True once all 6 days are used — no more words may be entered.</summary>
+    public static bool AllDaysUsed => SavedWordCount() >= SavedWordDaysCount;
+
     /// <summary>[0] oldest … [5] newest; missing entries are empty strings.</summary>
     public static List<string> LoadWords()
     {
@@ -106,6 +118,8 @@ public class WordInputManager : MonoBehaviour
     public void ShowInputField()
     {
         if (inputField == null) return;
+        // All days used → the ritual is complete; never show the field again.
+        if (AllDaysUsed) return;
         StopAllCoroutines();
         inputField.gameObject.SetActive(true);
         inputField.ActivateInputField();
@@ -178,21 +192,31 @@ public class WordInputManager : MonoBehaviour
         PlayerPrefs.DeleteKey(SavedWordsKey);
         PlayerPrefs.Save();
         words = LoadWords();
-        if (WordDisplay.S != null)
-            WordDisplay.S.DisplayWords();
     }
 
     public void EnterWord()
     {
+        // Hard cap: once all 6 days are used, no more words can be added.
+        if (AllDaysUsed)
+        {
+            HideInputField();
+            return;
+        }
+
         if (inputField != null)
             word = inputField.text;
         AddWordToSlots(words, word);
         SaveWords(words.ToArray());
-        if (WordDisplay.S != null)
-            WordDisplay.S.DisplayWords();
+
+        // Advance the Song Stage
+        // Stage is based on current word
+        int stageToLoad = GameManager.S.currentDay + 1;
+        Debug.Log("Setting Stage to " + stageToLoad);
+        AudioManager.S.SetStage(stageToLoad);
+
+        // Close it down
         GameManager.S.NotifyUserEndedWindow(DateTime.Now);
         GameManager.S.SetGameAvailable(false);
         HideInputField();
-        AudioManager.S.ParseWord(word);
     }
 }
