@@ -168,6 +168,8 @@ Lastly, feels important to lay out _exactly_ how the word is being mapped to the
 
 ## 06.18.26
 
+[Song Test](https://mouseandthebillionaire.github.io/lautir/songTest/)
+
 Been working on this a lot, mainly on the music side of things, but not journalling about the process which is my bad. I'm roughly halfway through laying out all of the song structure. This will need a lot of refinement and tweaks in the coming week, but it's sounding pretty good. The version above is music only. Click on the screen, press space, and the song will play (after an annoyingly along delay). You can look at the debug logs to see what instruments are being loaded in what order. Right now the song structure is:
 
 - Initial silence, with music only starting once the first word has been processed
