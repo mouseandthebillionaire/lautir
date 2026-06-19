@@ -166,6 +166,28 @@ Lastly, feels important to lay out _exactly_ how the word is being mapped to the
 - The second letter also controls the length of the notes (half, quarter, eighth, sixteenth) because it seemed to make sense to line that up with density
 - The alphabetical distance between the first and fifth letters and second and sixth letters controls the left delay and right delay, respectively. So as of now, the fifth and sixth letters aren't directly controlling any parameter. Obviously there's room then for even more variety here. But I came up wth this idea of comparing the relationship to different letters within the word as I was writing the code, and that felt like a fun idea to try out.
 
+## 06.18.26
+
+Been working on this a lot, mainly on the music side of things, but not journalling about the process which is my bad. I'm roughly halfway through laying out all of the song structure. This will need a lot of refinement and tweaks in the coming week, but it's sounding pretty good. The version above is music only. Click on the screen, press space, and the song will play (after an annoyingly along delay). You can look at the debug logs to see what instruments are being loaded in what order. Right now the song structure is:
+
+- Initial silence, with music only starting once the first word has been processed
+- First word tied to a repetitive chime and pad. First letter loads a unique pad wave file for the given letter. Second letter sets BPM. Third letter sets overall song key. Fourth letter sets the chime timbre. 5th and 6th letters run the delay time (just like in the melody instruments)
+- Second word sets the baseline. This works much like the melody.
+- Third word does the first melody
+- Fourth word sets the second melody
+
+Some issues that need to be addressed:
+
+- RNBO patch triggers the chime on activation. Probably just need to set its volume to zero by default to prevent this
+- The long delay is because of the pad being loaded into the buffer. Should probably do this in the background? Maybe we can get the chime to start first while the pad is loading. Once we have the word stored maybe we can even load this as soon as the user gets to the page to stop this delay from happening. It might be unavoidable the first time through though.
+- Not sure if the bass should remain the second instrument. Might be better to introduce it after the melodies.
+- I think I want to add back in the washy pads we had in the original version. I'll need to rebuild those in RNBO.
+- The chime is a bit repetitive. I should script it so that there's a some percent chance of firing the 4th 5th (and 7th?) every so often.
+- Eventually I think I want to (per my most recent convo with PB) unbuild the song back to zero so we get a nice little arc. 
+- The chime speed is getting changed when the baseline loads for some reason
+
+&&&.*.((.( @.!!.@@ ^^.#.$.#
+
 ---
 ## Notes
 
