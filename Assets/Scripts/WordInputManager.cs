@@ -18,6 +18,8 @@ public class WordInputManager : MonoBehaviour
     const int SavedWordDaysCount = 6;
     const char WordSeparator = '\n';
 
+    public bool testWords = false;
+
     public List<string> words;
 
     /// <summary>Number of non-empty saved words (saturates at <see cref="SavedWordDaysCount"/>).</summary>
@@ -85,7 +87,15 @@ public class WordInputManager : MonoBehaviour
             inputField.onValueChanged.AddListener(OnInputValueChanged);
             inputField.onEndEdit.AddListener(OnInputSubmit);
         }
-        words = LoadWords();
+    
+        if (testWords)
+        {
+            words = new List<string> { "WHALES", "OCEANS", "SHARKS", "SQUIDS" };
+        }
+        else
+        {
+            words = LoadWords();
+        }
         Reset();
         if (GameManager.S != null && GameManager.S.IsGameAvailable)
             ShowInputField();
@@ -212,7 +222,7 @@ public class WordInputManager : MonoBehaviour
         // Stage is based on current word
         int stageToLoad = GameManager.S.currentDay + 1;
         Debug.Log("Setting Stage to " + stageToLoad);
-        AudioManager.S.SetStage(stageToLoad);
+        SongManager.S.SetStage(stageToLoad);
 
         // Close it down
         GameManager.S.NotifyUserEndedWindow(DateTime.Now);

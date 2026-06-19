@@ -1,21 +1,27 @@
 mergeInto(LibraryManager.library, {
-  // Call synchronously from a tap/key handler so mobile browsers unlock audio.
   RNBO_ResumeAudioOnGesture: function() {
     if (!window.__lautirRnbo) {
-      window.__lautirRnbo = {
-        instances: {},
-        patcherCache: {},
-        depsCache: {},
-        audioContext: null
-      };
+      window.__lautirRnbo = { instances: {}, patcherCache: {}, depsCache: {}, audioContext: null };
     }
-    const st = window.__lautirRnbo;
-    if (!st.audioContext) {
-      const WAContext = window.AudioContext || window.webkitAudioContext;
-      st.audioContext = new WAContext();
-    }
-    if (st.audioContext.state !== "running") {
-      st.audioContext.resume();
+    const ctx = (typeof WEBAudio !== "undefined" && WEBAudio.audioContext)
+      ? WEBAudio.audioContext
+      : window.__lautirRnbo.audioContext;
+    if (!ctx) return;
+    if (ctx.state !== "running") {
+      ctx.resume().then(function() {
+        const st = window.__lautirRnbo;
+        if (!st || !st.instances || typeof RNBO === "undefined") return;
+        Object.keys(st.instances).forEach(function(key) {
+          const slot = st.instances[key];
+          if (!slot || !slot.ready || !slot.device) return;
+          const tNow = (typeof RNBO.TimeNow !== "undefined" && RNBO.TimeNow !== null) ? RNBO.TimeNow : 0;
+          if (RNBO.TempoEvent) slot.device.scheduleEvent(new RNBO.TempoEvent(tNow, 60));
+          if (RNBO.TransportEvent) {
+            slot.device.scheduleEvent(new RNBO.TransportEvent(tNow, 0));
+            slot.device.scheduleEvent(new RNBO.TransportEvent(tNow, 1));
+          }
+        });
+      });
     }
   },
 
@@ -24,42 +30,65 @@ mergeInto(LibraryManager.library, {
     const depsUrl = UTF8ToString(depsUrlPtr);
 
     if (!window.__lautirRnbo) {
-      window.__lautirRnbo = {
-        instances: {},
-        patcherCache: {},
-        depsCache: {},
-        audioContext: null
-      };
+      window.__lautirRnbo = { instances: {}, patcherCache: {}, depsCache: {}, audioContext: null };
     }
     const st = window.__lautirRnbo;
     const key = String(instanceIndex);
     if (!st.instances[key]) {
-      st.instances[key] = {
-        ready: false,
-        initStarted: false,
-        lastError: "",
-        device: null
-      };
+      st.instances[key] = { ready: false, initStarted: false, lastError: "", device: null, bufferLoadState: 0 };
     }
     const slot = st.instances[key];
-
-    if (slot.ready) return;
-    if (slot.initStarted) return;
+    if (slot.ready || slot.initStarted) return;
     slot.initStarted = true;
     slot.lastError = "";
 
-    const fail = (e) => {
+    const fail = function(e) {
       slot.lastError = (e && e.message) ? e.message : ("" + e);
       console.error("RNBO init failed (instance " + instanceIndex + "):", e);
       slot.ready = false;
       slot.initStarted = false;
     };
 
-    const ensureRnboScript = async () => {
+    const getAudioContext = function() {
+      if (typeof WEBAudio !== "undefined" && WEBAudio.audioContext) return WEBAudio.audioContext;
+      return st.audioContext;
+    };
+
+    const waitForRunningAudioContext = async function() {
+      const deadline = Date.now() + 120000;
+      while (Date.now() < deadline) {
+        let ctx = getAudioContext();
+        if (!ctx && typeof WEBAudio === "undefined") {
+          const WAContext = window.AudioContext || window.webkitAudioContext;
+          ctx = new WAContext();
+          st.audioContext = ctx;
+        }
+        if (ctx) {
+          if (ctx.state !== "running") {
+            try { await ctx.resume(); } catch (e) {}
+          }
+          if (ctx.state === "running") return ctx;
+        }
+        await new Promise(function(r) { setTimeout(r, 200); });
+      }
+      throw new Error("AudioContext did not reach running state within 120s — click the page to start audio");
+    };
+
+    const startTransport = function(device) {
+      if (!device || typeof RNBO === "undefined") return;
+      const tNow = (typeof RNBO.TimeNow !== "undefined" && RNBO.TimeNow !== null) ? RNBO.TimeNow : 0;
+      if (RNBO.TempoEvent) device.scheduleEvent(new RNBO.TempoEvent(tNow, 60));
+      if (RNBO.TransportEvent) {
+        device.scheduleEvent(new RNBO.TransportEvent(tNow, 0));
+        device.scheduleEvent(new RNBO.TransportEvent(tNow, 1));
+        console.log("[LAUTIR] Transport running (instance " + instanceIndex + ")");
+      }
+    };
+
+    const ensureRnboScript = async function() {
       if (window.RNBO && window.RNBO.createDevice) return;
-      await new Promise((resolve, reject) => {
+      await new Promise(function(resolve, reject) {
         const el = document.createElement("script");
-        // Must match lautirSynth.export.json meta.rnboversion (currently 1.4.3).
         el.src = "https://cdn.cycling74.com/rnbo/1.4.3/rnbo.min.js";
         el.async = true;
         el.onload = resolve;
@@ -68,16 +97,12 @@ mergeInto(LibraryManager.library, {
       });
     };
 
-    const init = async () => {
+    const init = async function() {
       await ensureRnboScript();
 
-      if (!st.audioContext) {
-        const WAContext = window.AudioContext || window.webkitAudioContext;
-        st.audioContext = new WAContext();
-      }
-      if (st.audioContext.state !== "running") {
-        await st.audioContext.resume();
-      }
+      // Share Unity's WEBAudio context — a separate AudioContext is inaudible when Unity audio works.
+      const ctx = await waitForRunningAudioContext();
+      st.audioContext = ctx;
 
       let patcher = st.patcherCache[patcherUrl];
       if (!patcher) {
@@ -95,59 +120,38 @@ mergeInto(LibraryManager.library, {
         st.depsCache[depsUrl] = deps;
       }
 
-      const createOpts = { context: st.audioContext, patcher };
+      // Resolve dependency paths relative to dependencies.json (Unity: …/StreamingAssets/LautirSong/).
+      const depsBaseUrl = depsUrl.replace(/[^/]+$/, "");
+      const resolvedDeps = (deps || []).map(function(dep) {
+        if (!dep || !dep.file || /^https?:\/\//i.test(dep.file)) return dep;
+        return { id: dep.id, file: depsBaseUrl + dep.file.replace(/^\//, "") };
+      });
+
+      const createOpts = { context: ctx, patcher: patcher };
       if (RNBO.ParameterNotificationSetting) {
         createOpts.options = { parameterNotificationSetting: RNBO.ParameterNotificationSetting.All };
       }
+
+      // loadbang runs during createDevice — only schedule after AudioContext is running.
       const device = await RNBO.createDevice(createOpts);
-      device.node.connect(st.audioContext.destination);
+      device.node.connect(ctx.destination);
 
-      if (device.loadDataBufferDependencies) {
-        await device.loadDataBufferDependencies(deps);
+      if (device.loadDataBufferDependencies && resolvedDeps.length > 0) {
+        const loadResults = await device.loadDataBufferDependencies(resolvedDeps);
+        loadResults.forEach(function(r) {
+          if (r.type !== "success") {
+            console.warn("[LAUTIR] deps load failed id=" + r.id + ": " + (r.error || "unknown"));
+          }
+        });
       }
 
-      const pulseParam = (id, value) => {
-        const p = device.parametersById && device.parametersById.get ? device.parametersById.get(id) : null;
-        if (p) p.value = value;
-      };
-
-      // loadbang runs during createDevice, often before transport — start transport then re-trigger control params.
-      const tNow = (typeof RNBO.TimeNow !== "undefined" && RNBO.TimeNow !== null) ? RNBO.TimeNow : 0;
-      if (RNBO.TempoEvent) {
-        device.scheduleEvent(new RNBO.TempoEvent(tNow, 60));
-      }
-      if (RNBO.TransportEvent) {
-        device.scheduleEvent(new RNBO.TransportEvent(tNow, 1));
-        console.log("[LAUTIR] Transport running (instance " + instanceIndex + ")");
-      } else {
-        console.warn("[LAUTIR] TransportEvent unavailable (instance " + instanceIndex + ")");
-      }
-
-      // begin alone routes to noteLogic inlet 1 (bang); note param edge starts noteLogic metros (inlet 0).
-      pulseParam("note", 0);
-      pulseParam("note", 2);
-      pulseParam("begin", 0);
-      pulseParam("begin", 1);
-      console.log("[LAUTIR] begin + note re-triggered after transport (instance " + instanceIndex + ")");
-
-      // Patch uses delay 100–1000 ms before the melody gate opens; pulse again once it should have fired.
-      setTimeout(() => {
-        if (!slot.ready || !slot.device) return;
-        pulseParam("note", 1);
-        pulseParam("note", 2);
-        pulseParam("begin", 0);
-        pulseParam("begin", 1);
-        if (RNBO.MessageEvent) {
-          slot.device.scheduleEvent(new RNBO.MessageEvent(RNBO.TimeNow || 0, "rnboReceive", [1]));
-        }
-        console.log("[LAUTIR] Delayed melody re-trigger (instance " + instanceIndex + ")");
-      }, 1500);
+      startTransport(device);
 
       slot.device = device;
       slot.ready = true;
       slot.lastError = "";
-
-      console.log("[LAUTIR] RNBO ready instance " + instanceIndex + " | AudioContext=" + st.audioContext.state);
+      const sharedUnity = (typeof WEBAudio !== "undefined" && WEBAudio.audioContext === ctx);
+      console.log("[LAUTIR] RNBO ready instance " + instanceIndex + " | AudioContext=" + ctx.state + " | sharedUnity=" + sharedUnity);
     };
 
     init().catch(fail);
@@ -203,17 +207,78 @@ mergeInto(LibraryManager.library, {
       console.warn("[LAUTIR] RNBO.MessageEvent missing");
       return 0;
     }
-
     const tNow = (typeof RNBO.TimeNow !== "undefined" && RNBO.TimeNow !== null) ? RNBO.TimeNow : 0;
-    if (RNBO.TempoEvent) {
-      slot.device.scheduleEvent(new RNBO.TempoEvent(tNow, 60));
-    }
+    if (RNBO.TempoEvent) slot.device.scheduleEvent(new RNBO.TempoEvent(tNow, 60));
     if (RNBO.TransportEvent) {
+      slot.device.scheduleEvent(new RNBO.TransportEvent(tNow, 0));
       slot.device.scheduleEvent(new RNBO.TransportEvent(tNow, 1));
     }
-    const ev = new RNBO.MessageEvent(tNow, tag, [ value ]);
-    slot.device.scheduleEvent(ev);
-    console.log("[LAUTIR] SendMessage " + tag + " → instance " + instanceIndex + " | AudioContext=" + (window.__lautirRnbo && window.__lautirRnbo.audioContext ? window.__lautirRnbo.audioContext.state : "?"));
+    slot.device.scheduleEvent(new RNBO.MessageEvent(tNow, tag, [ value ]));
     return 1;
+  },
+
+  // bufferLoadState: 0 idle, 1 loading, 2 ok, 3 failed
+  RNBO_LoadDataBufferFromUrl: function(instanceIndex, bufferIdPtr, urlPtr) {
+    const bufferId = UTF8ToString(bufferIdPtr);
+    const url = UTF8ToString(urlPtr);
+    const st = window.__lautirRnbo;
+    if (!st || !st.instances) return 0;
+    const slot = st.instances[String(instanceIndex)];
+    if (!slot || !slot.ready || !slot.device) {
+      if (slot) slot.lastError = "RNBO device not ready";
+      return 0;
+    }
+    if (slot.bufferLoadState === 1) return 0;
+
+    const ctx = st.audioContext;
+    if (!ctx) {
+      slot.lastError = "AudioContext not available";
+      return 0;
+    }
+
+    slot.bufferLoadState = 1;
+    slot.lastError = "";
+
+    (async function() {
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("buffer fetch failed: " + url + " (" + response.status + ")");
+        const contentType = response.headers.get("content-type") || "";
+        const arrayBuf = await response.arrayBuffer();
+        if (arrayBuf.byteLength < 12) {
+          throw new Error("buffer too small (" + arrayBuf.byteLength + " bytes) from " + url);
+        }
+        const head = new Uint8Array(arrayBuf, 0, 4);
+        const riff = String.fromCharCode(head[0], head[1], head[2], head[3]);
+        if (riff !== "RIFF" && contentType.indexOf("audio") === -1) {
+          throw new Error("not audio data from " + url + " (content-type: " + contentType + ", sig: " + riff + ")");
+        }
+        const audioBuf = await ctx.decodeAudioData(arrayBuf.slice(0));
+        if (!slot.device.setDataBuffer) throw new Error("device.setDataBuffer not available");
+        await slot.device.setDataBuffer(bufferId, audioBuf);
+        slot.bufferLoadState = 2;
+        console.log("[LAUTIR] Loaded buffer \"" + bufferId + "\" from " + url + " (instance " + instanceIndex + ")");
+      } catch (e) {
+        slot.bufferLoadState = 3;
+        slot.lastError = (e && e.message) ? e.message : ("" + e);
+        console.error("[LAUTIR] LoadDataBuffer failed (instance " + instanceIndex + "):", e);
+      }
+    })();
+    return 1;
+  },
+
+  RNBO_GetDataBufferLoadState: function(instanceIndex) {
+    const st = window.__lautirRnbo;
+    if (!st || !st.instances) return 0;
+    const slot = st.instances[String(instanceIndex)];
+    if (!slot) return 0;
+    return slot.bufferLoadState || 0;
+  },
+
+  RNBO_ResetDataBufferLoadState: function(instanceIndex) {
+    const st = window.__lautirRnbo;
+    if (!st || !st.instances) return;
+    const slot = st.instances[String(instanceIndex)];
+    if (slot) slot.bufferLoadState = 0;
   }
 });

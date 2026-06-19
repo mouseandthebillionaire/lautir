@@ -15,6 +15,7 @@ const exportDir = join(root, "Assets/StreamingAssets/LautirSong");
 const mime = {
   ".json": "application/json",
   ".html": "text/html",
+  ".wav": "audio/wav",
 };
 
 function serveFile(res, path) {
@@ -36,6 +37,8 @@ const server = createServer((req, res) => {
     serveFile(res, join(exportDir, "lautirSong.export.json"));
   } else if (req.url === "/deps.json") {
     serveFile(res, join(exportDir, "dependencies.json"));
+  } else if (req.url?.startsWith("/media/")) {
+    serveFile(res, join(exportDir, req.url.slice(1)));
   } else {
     res.writeHead(404);
     res.end("404");
@@ -90,7 +93,13 @@ const result = await page.evaluate(async () => {
   const patchRes = await fetch("/export.json");
   const patcher = await patchRes.json();
   const depsRes = await fetch("/deps.json");
-  const deps = await depsRes.json();
+  let deps = await depsRes.json();
+  if ((!deps || deps.length === 0) && patcher.desc?.externalDataRefs?.length) {
+    deps = patcher.desc.externalDataRefs.map((ref) => ({
+      id: ref.id,
+      file: `media/${ref.file}`,
+    }));
+  }
 
   const device = await RNBO.createDevice({
     context: ctx,
@@ -106,7 +115,7 @@ const result = await page.evaluate(async () => {
   device.messageEvent?.subscribe((ev) => messages.push(`${ev.tag}:${ev.payload}`));
 
   const paramMethods = {};
-  for (const id of ["begin", "note", "melody"]) {
+  for (const id of ["melody_0/begin", "melody_0/note", "melody_0/melody"]) {
     const p = device.parametersById.get(id);
     paramMethods[id] = p ? Object.getOwnPropertyNames(Object.getPrototypeOf(p)).sort() : null;
   }
@@ -117,43 +126,44 @@ const result = await page.evaluate(async () => {
 
   const baseline = await peak(device.node, 0.5);
 
-  // Mirror jslib bootstrap
-  set(device, "begin", 0);
-  set(device, "begin", 1);
+  // Mirror jslib bootstrap (scoped polyphonic params)
+  set(device, "melody_0/begin", 0);
+  set(device, "melody_0/begin", 1);
+  set(device, "melody_1/begin", 0);
+  set(device, "melody_1/begin", 1);
   device.scheduleEvent(new RNBO.MessageEvent(tNow, "rnboReceive", [1]));
   await wait(1500);
 
   const afterBootstrap = await peak(device.node, 2);
 
   // Full param set like PlayMelody
-  set(device, "phrase_length", 16);
-  set(device, "noteDensity", 7);
-  set(device, "melody", 10);
-  set(device, "timbre", 500);
-  set(device, "note", 2);
-  set(device, "leftDelay", 300);
-  set(device, "rightDelay", 400);
-  set(device, "feedback", 0.5);
+  set(device, "melody_0/noteDensity", 7);
+  set(device, "melody_0/melody", 10);
+  set(device, "melody_0/timbre", 500);
+  set(device, "melody_0/note", 2);
+  set(device, "melody_0/leftDelay", 300);
+  set(device, "melody_0/rightDelay", 400);
+  set(device, "melody_0/feedback", 0.5);
   set(device, "limiterGain", 0);
-  set(device, "begin", 0);
-  set(device, "begin", 1);
+  set(device, "melody_0/begin", 0);
+  set(device, "melody_0/begin", 1);
   await wait(1500);
   const afterFull = await peak(device.node, 2);
 
   // Param edges that should bang noteLogic / phrase chain in the patch
-  set(device, "note", 1);
-  set(device, "note", 3);
-  set(device, "melody", 1);
-  set(device, "melody", 5);
-  set(device, "timbre", 100);
-  set(device, "timbre", 500);
+  set(device, "melody_0/note", 1);
+  set(device, "melody_0/note", 3);
+  set(device, "melody_0/melody", 1);
+  set(device, "melody_0/melody", 5);
+  set(device, "melody_0/timbre", 100);
+  set(device, "melody_0/timbre", 500);
   await wait(3000);
   const afterParamEdges = await peak(device.node, 2);
 
   // Re-trigger begin after long wait (covers delay 1000 + noteLogic delay 100)
-  set(device, "begin", 0);
+  set(device, "melody_0/begin", 0);
   await wait(50);
-  set(device, "begin", 1);
+  set(device, "melody_0/begin", 1);
   await wait(3000);
   const afterLongBegin = await peak(device.node, 2);
 
@@ -162,8 +172,8 @@ const result = await page.evaluate(async () => {
   let afterParamEvent = null;
   if (RNBO.ParameterEvent) {
     const t = RNBO.TimeNow ?? 0;
-    device.scheduleEvent(new RNBO.ParameterEvent(t, "note", 2));
-    device.scheduleEvent(new RNBO.ParameterEvent(t, "begin", 1));
+    device.scheduleEvent(new RNBO.ParameterEvent(t, "melody_0/note", 2));
+    device.scheduleEvent(new RNBO.ParameterEvent(t, "melody_0/begin", 1));
     await wait(3000);
     afterParamEvent = await peak(device.node, 2);
   }

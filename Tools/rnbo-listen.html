@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>LautirSong — RNBO listen test</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 42rem; margin: 2rem auto; padding: 0 1rem; }
+    button { font-size: 1rem; padding: 0.5rem 1rem; cursor: pointer; }
+    #status { margin: 1rem 0; padding: 0.75rem; background: #f4f4f4; border-radius: 6px; white-space: pre-wrap; font-size: 0.9rem; }
+    #log { margin-top: 1rem; font-family: ui-monospace, monospace; font-size: 0.8rem; max-height: 12rem; overflow-y: auto; background: #111; color: #9f9; padding: 0.75rem; border-radius: 6px; }
+    label { display: block; margin: 0.75rem 0 0.25rem; font-size: 0.85rem; color: #444; }
+    input[type="range"] { width: 100%; }
+    .row { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin-top: 1rem; }
+    .val { font-variant-numeric: tabular-nums; min-width: 3rem; }
+  </style>
+</head>
+<body>
+  <h1>LautirSong listen test</h1>
+  <p>Loads <code>Assets/StreamingAssets/LautirSong/</code> — same export Unity uses.</p>
+  <p><strong>Run <code>node Tools/rnbo-listen.mjs</code> first</strong> — do not open this file directly.</p>
+
+  <div class="row">
+    <button id="start">Start / resume audio</button>
+    <button id="transport" disabled>Toggle transport</button>
+  </div>
+
+  <div id="status">Not started.</div>
+
+  <div id="sliders"></div>
+
+  <div id="log"></div>
+
+  <script src="https://cdn.cycling74.com/rnbo/1.4.3/rnbo.min.js"></script>
+  <script>
+    const statusEl = document.getElementById("status");
+    const logEl = document.getElementById("log");
+    const slidersEl = document.getElementById("sliders");
+    let device = null;
+    let transportOn = false;
+
+    function log(msg) {
+      const line = document.createElement("div");
+      line.textContent = msg;
+      logEl.prepend(line);
+    }
+
+    function setStatus(text) {
+      statusEl.textContent = text;
+    }
+
+    async function fetchJson(path) {
+      let res;
+      try {
+        res = await fetch(path);
+      } catch (err) {
+        if (location.protocol === "file:") {
+          throw new Error(
+            "Cannot load export via file://. Run: node Tools/rnbo-listen.mjs\n" +
+            "Then open the http://127.0.0.1:… URL it prints."
+          );
+        }
+        throw new Error(`Fetch failed for ${path} — is the server running? (${err.message})`);
+      }
+      if (!res.ok) throw new Error(`${path} → HTTP ${res.status}`);
+      return res.json();
+    }
+
+    function setParam(id, value) {
+      const p = device?.parametersById.get(id);
+      if (!p) return false;
+      p.value = value;
+      return true;
+    }
+
+    function bootstrapPatch() {
+      // Polyphonic export exposes scoped params (melody_0/begin, not top-level begin).
+      for (const prefix of ["melody_0", "melody_1"]) {
+        setParam(`${prefix}/phrase_length`, 16);
+        setParam(`${prefix}/noteDensity`, 7);
+        setParam(`${prefix}/melody`, 10);
+        setParam(`${prefix}/timbre`, 500);
+        setParam(`${prefix}/note`, 2);
+        setParam(`${prefix}/begin`, 0);
+        setParam(`${prefix}/begin`, 1);
+      }
+      setParam("chime_and_pad/timbre", 500);
+      setParam("limiterGain", 0);
+    }
+
+    async function loadDevice(ctx) {
+      const patcher = await fetchJson("/export.json");
+      let deps = await fetchJson("/deps.json");
+
+      // Embedded-export bug: dependencies.json is often [] while externalDataRefs still list pads.
+      if ((!deps || deps.length === 0) && patcher.desc?.externalDataRefs?.length) {
+        deps = patcher.desc.externalDataRefs.map((ref) => ({
+          id: ref.id,
+          file: `media/${ref.file}`,
+        }));
+        log(`deps.json empty — built ${deps.length} entries from export externalDataRefs`);
+      }
+
+      device = await RNBO.createDevice({
+        context: ctx,
+        patcher,
+        options: { parameterNotificationSetting: RNBO.ParameterNotificationSetting?.All ?? 0 },
+      });
+      device.node.connect(ctx.destination);
+
+      let depSummary = "no buffer loader";
+      if (device.loadDataBufferDependencies) {
+        const results = await device.loadDataBufferDependencies(deps);
+        const ok = results.filter((r) => r.type === "success").map((r) => r.id);
+        const fail = results.filter((r) => r.type !== "success");
+        depSummary = ok.length
+          ? `buffers: ${ok.join(", ")}`
+          : "buffers: none loaded";
+        if (fail.length) {
+          depSummary += `\nfailed: ${fail.map((r) => `${r.id} (${r.error ?? "unknown"})`).join("; ")}`;
+        }
+        log(depSummary.replace("\n", " | "));
+      }
+
+      device.parameterChangeEvent?.subscribe((ev) => {
+        log(`param ${ev.id ?? ev.parameterId} = ${ev.value}`);
+      });
+      device.messageEvent?.subscribe((ev) => {
+        log(`message ${ev.tag}: ${ev.payload}`);
+      });
+
+      const t0 = RNBO.TimeNow ?? 0;
+      device.scheduleEvent(new RNBO.TempoEvent(t0, 60));
+      device.scheduleEvent(new RNBO.TransportEvent(t0, 1));
+      transportOn = true;
+      bootstrapPatch();
+
+      buildSliders();
+      device._depSummary = depSummary;
+      return device;
+    }
+
+    function buildSliders() {
+      slidersEl.innerHTML = "";
+      const ids = [...device.parametersById.keys()].sort();
+      for (const id of ids) {
+        const p = device.parametersById.get(id);
+        const wrap = document.createElement("div");
+        const label = document.createElement("label");
+        label.textContent = id;
+        const row = document.createElement("div");
+        row.className = "row";
+        const input = document.createElement("input");
+        input.type = "range";
+        input.min = p.minimum ?? 0;
+        input.max = p.maximum ?? 1;
+        input.step = (p.maximum - p.minimum) > 100 ? 1 : 0.01;
+        input.value = p.value;
+        const val = document.createElement("span");
+        val.className = "val";
+        val.textContent = String(p.value);
+        input.addEventListener("input", () => {
+          p.value = Number(input.value);
+          val.textContent = String(p.value);
+        });
+        row.append(input, val);
+        wrap.append(label, row);
+        slidersEl.append(wrap);
+      }
+    }
+
+    if (location.protocol === "file:") {
+      setStatus(
+        "Opened as a local file — this will not work.\n\n" +
+        "In a terminal from the project root, run:\n" +
+        "  node Tools/rnbo-listen.mjs\n\n" +
+        "Then open the http://127.0.0.1:8765/ URL it prints."
+      );
+    }
+
+    document.getElementById("start").addEventListener("click", async () => {
+      try {
+        const ctx = new AudioContext();
+        await ctx.resume();
+        if (!device) await loadDevice(ctx);
+        else await ctx.resume();
+
+        const ids = [...device.parametersById.keys()].sort();
+        setStatus(
+          `Running\n` +
+          `AudioContext: ${ctx.state}\n` +
+          `Params: ${ids.length}\n` +
+          `Transport: ${transportOn ? "on" : "off"}\n` +
+          `${device._depSummary ?? ""}\n` +
+          `melody_0/begin=${device.parametersById.get("melody_0/begin")?.value ?? "—"}  ` +
+          `melody_0/melody=${device.parametersById.get("melody_0/melody")?.value ?? "—"}  ` +
+          `bpm=${device.parametersById.get("bpm")?.value ?? "—"}`
+        );
+        log("started — you should hear output if the patch generates audio");
+        document.getElementById("transport").disabled = false;
+      } catch (err) {
+        setStatus("Error: " + err.message);
+        console.error(err);
+      }
+    });
+
+    document.getElementById("transport").addEventListener("click", () => {
+      if (!device) return;
+      const t = RNBO.TimeNow ?? 0;
+      transportOn = !transportOn;
+      device.scheduleEvent(new RNBO.TransportEvent(t, transportOn ? 1 : 0));
+      log("transport " + (transportOn ? "on" : "off"));
+      setStatus(statusEl.textContent.replace(/Transport: .+/, "Transport: " + (transportOn ? "on" : "off")));
+    });
+  </script>
+</body>
+</html>
