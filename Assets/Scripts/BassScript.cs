@@ -15,7 +15,7 @@ public class BassScript : MonoBehaviour
     public int phraseLength = 8; // RNBO range 2–8
     public int noteDensity = 7;
     public int bassline = 0;
-    public int drive = 0; // 0 to 100
+    public int mix = 0; // 0–4 in RNBO
     public int note = 2; // 1–4 in RNBO
     public int distVolume = 30;
 
@@ -76,14 +76,14 @@ public class BassScript : MonoBehaviour
         SetParam("phraseLength", 16);
         SetParam("note", 2);
         SetParam("bass", 100);
-        SetParam("distVolume", 30);
-        SetParam("mix", 75);
-        SetParam("drive", 0);
+        SetParam("distVolume", 75);
+        SetParam("mix", 0);
+        SetParam("drive", 75);
     }
 
     public void ParseWord(string word)
     {
-        if (word == null || word.Length == 0) return;
+        if (word == null || word.Length < WordInputManager.MaxWordLength) return;
         this.letters = word.ToCharArray();
 
         RnboWebBridge.ResumeAudioOnUserGesture();
@@ -120,8 +120,7 @@ public class BassScript : MonoBehaviour
         bassline = char.ToLowerInvariant(letters[2]) - 'a';
         bassline = Mathf.Clamp(bassline, 0, 27);
 
-        drive = Mathf.Clamp((char.ToLowerInvariant(letters[3]) - 'a') * 4, 0, 100);
-        distVolume = Mathf.Clamp(30 - (drive / 10), 0, 100);
+        mix = Mathf.Clamp((char.ToLowerInvariant(letters[3]) - 'a') / 6, 0, 4);
 
         int noteIndex = System.Array.IndexOf(letterCommonality.Reverse().ToArray(), char.ToUpperInvariant(letters[1]));
         if (noteIndex < 0) noteIndex = 0;
@@ -152,13 +151,12 @@ public class BassScript : MonoBehaviour
         SetParam("phraseLength", phraseLength);
         SetParam("noteDensity", noteDensity);
         SetParam("bassline", bassline);
-        SetParam("drive", drive);
-        SetParam("distVolume", distVolume);
+        SetParam("mix", mix);
         SetParam("note", note);
-        SetParam("mix", 100);
         SetParam("bass", 100);
+        SetParam("volume", 0f);
 
-        Debug.Log($"[LAUTIR] Bass params (instance {instanceIndex}): phraseLength={phraseLength}, noteDensity={noteDensity}, baseline={bassline}, drive={drive}, distVolume={distVolume}, note={note}");
+        Debug.Log($"[LAUTIR] Bass params (instance {instanceIndex}): phraseLength={phraseLength}, noteDensity={noteDensity}, baseline={bassline}, mix={mix}, distVolume={distVolume}, note={note}");
 
         yield return new WaitForSeconds(0.1f);
 
@@ -168,16 +166,6 @@ public class BassScript : MonoBehaviour
             Debug.LogError($"[LAUTIR] SendMessage rnboReceive failed (instance {instanceIndex})");
         else
             Debug.Log($"[LAUTIR] Bass trigger sent (instance {instanceIndex})");
-
-        // Audible immediately; ramp to full over 4 bars if already below 1
-        float volume = 0f;
-        float duration = 4f * 60f / Mathf.Max(1, SongBpm);
-        while (volume < 0.25f)
-        {
-            volume += Time.deltaTime / duration;
-            SetParam("volume", volume);
-            yield return null;
-        }
     }
 
     bool SetParam(string name, float value) =>

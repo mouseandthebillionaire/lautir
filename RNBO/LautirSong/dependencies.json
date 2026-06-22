@@ -2,5 +2,21 @@
   {
     "id": "pad",
     "file": "../pad_A.wav"
+  },
+  {
+    "id": "a0",
+    "file": "../ambience_0.wav"
+  },
+  {
+    "id": "a1",
+    "file": "../ambience_1.wav"
+  },
+  {
+    "id": "a2",
+    "file": "../ambience_2.wav"
+  },
+  {
+    "id": "a3",
+    "file": "../ambience_3.wav"
   }
 ]

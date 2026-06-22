@@ -146,7 +146,7 @@ public class MelodyScript : MonoBehaviour
 
     public void ParseWord(string word)
     {
-        if (word == null || word.Length == 0) return;
+        if (word == null || word.Length < WordInputManager.MaxWordLength) return;
         this.letters = word.ToCharArray();
 
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -199,14 +199,11 @@ public class MelodyScript : MonoBehaviour
         int noteIndex = System.Array.IndexOf(letterCommonality.Reverse().ToArray(), char.ToLowerInvariant(letters[1]));
         note = noteIndex / 7 + 1;
         
-        // Set Left Delay based on distance between first and fifth letter?
-        // Needs to be an absolute value
+        // Delays: 5th letter vs 1st (left), 5th vs 2nd (right)
         int delayDistance = Mathf.Abs(char.ToLowerInvariant(letters[4]) - char.ToLowerInvariant(letters[0]));
         leftDelay = 100 + (delayDistance * 36);
-        
-        // Set Right Delay based on distance between second and sixth letter?
-        // Needs to be an absolute value
-        delayDistance = Mathf.Abs(char.ToLowerInvariant(letters[5]) - char.ToLowerInvariant(letters[1]));
+
+        delayDistance = Mathf.Abs(char.ToLowerInvariant(letters[4]) - char.ToLowerInvariant(letters[1]));
         rightDelay = 100 + (delayDistance * 36);
 
         // Play the melody

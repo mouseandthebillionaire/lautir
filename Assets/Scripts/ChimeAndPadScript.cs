@@ -20,7 +20,7 @@ public class ChimeAndPadScript : MonoBehaviour
     [Header("Pad media")]
     public string padMediaFolder = "LautirSong/media/";
 
-    const int RequiredWordLength = 6;
+    const int RequiredWordLength = WordInputManager.MaxWordLength;
 
     [Header("Global Song Variables")]
     public int bpm = 60;
@@ -51,6 +51,7 @@ public class ChimeAndPadScript : MonoBehaviour
 
     string _padPath;
     Coroutine _padLoadCoroutine;
+    Coroutine _padRampCoroutine;
 
     bool IsPadReady =>
         RnboWebBridge.GetDataBufferLoadState(instanceIndex) == RnboWebBridge.DataBufferLoadState.Succeeded;
@@ -155,8 +156,8 @@ public class ChimeAndPadScript : MonoBehaviour
         _padLoadCoroutine = StartCoroutine(LoadPadCoroutine(padPath));
     }
 
-    // Called by SongManager — look up the saved word and play chime + pad.
-    public void PlayFromSavedWord()
+    // Arms the chime at volume 0 and begins pad load; pad fades in on its own schedule.
+    public IEnumerator ArmChimeFromSavedWord()
     {
         string word = GetSavedWordAtWordIndex();
         if (word.Length < RequiredWordLength)
@@ -164,11 +165,46 @@ public class ChimeAndPadScript : MonoBehaviour
             Debug.LogWarning(
                 $"[LAUTIR] ChimeAndPad: need a {RequiredWordLength}-letter word at index {wordIndex}, got \"{word}\". " +
                 "Enter a word in the ritual or set test words on WordInputManager.");
-            return;
+            yield break;
         }
 
+        if (playing) yield break;
+        playing = true;
+
         RnboWebBridge.ResumeAudioOnUserGesture();
-        StartCoroutine(PlayFromWord(word));
+        yield return WaitForReady();
+        if (!rnboAvailable)
+        {
+            playing = false;
+            yield break;
+        }
+
+        ParseWordFromLetters(word.ToCharArray());
+        EnsurePadLoading(PadPathForFirstLetter(word[0]));
+        yield return StartChime();
+        StopPadRamp();
+        _padRampCoroutine = StartCoroutine(RampPadVolumeWhenReady());
+        playing = false;
+    }
+
+    public void StopPadRamp()
+    {
+        if (_padRampCoroutine != null)
+        {
+            StopCoroutine(_padRampCoroutine);
+            _padRampCoroutine = null;
+        }
+    }
+
+    // Called by SongManager — look up the saved word and play chime + pad.
+    public void PlayFromSavedWord()
+    {
+        StartCoroutine(PlayFromSavedWordRoutine());
+    }
+
+    IEnumerator PlayFromSavedWordRoutine()
+    {
+        yield return ArmChimeFromSavedWord();
     }
 
     IEnumerator PlayFromWord(string word)
@@ -193,7 +229,7 @@ public class ChimeAndPadScript : MonoBehaviour
         }
     }
 
-    // Map the six letters of the saved word to chime + pad RNBO parameters (no pad I/O).
+    // Map the five letters of the saved word to chime + pad RNBO parameters (no pad I/O).
     public void ParseWordFromLetters(char[] letters)
     {
         if (letters == null || letters.Length < RequiredWordLength)
@@ -223,11 +259,11 @@ public class ChimeAndPadScript : MonoBehaviour
         // Chime timbre from 4th letter
         timbre = (char.ToLowerInvariant(letters[3]) - 'a') * 40;
 
-        // Chime delays from letter distances
+        // Chime delays: 5th letter vs 1st (left), 5th vs 2nd (right)
         int delayDistance = Mathf.Abs(char.ToLowerInvariant(letters[4]) - char.ToLowerInvariant(letters[0]));
         leftDelay = 100 + (delayDistance * 36);
 
-        delayDistance = Mathf.Abs(char.ToLowerInvariant(letters[5]) - char.ToLowerInvariant(letters[1]));
+        delayDistance = Mathf.Abs(char.ToLowerInvariant(letters[4]) - char.ToLowerInvariant(letters[1]));
         rightDelay = 100 + (delayDistance * 36);
     }
 
@@ -250,36 +286,43 @@ public class ChimeAndPadScript : MonoBehaviour
         SetParam("padRightDelay", padRightDelay);
         SetParam("padFeedback", padFeedback);
 
-        yield return new WaitForSeconds(0.1f);
         SetParam("begin", 1);
-        SetParam("chimeVolume", 1f);
+        SetParam("chimeVolume", 0f);
         SetParam("padVolume", 0f);
+        yield break;
     }
 
     IEnumerator RampPadVolumeWhenReady(float padLoadTimeoutSeconds = PadLoadTimeoutSeconds)
     {
-        float t0 = Time.realtimeSinceStartup;
-        while (!IsPadReady && Time.realtimeSinceStartup - t0 < padLoadTimeoutSeconds)
+        try
         {
-            if (!IsPadLoading && !IsPadReady)
-                break;
-            yield return null;
-        }
+            float t0 = Time.realtimeSinceStartup;
+            while (!IsPadReady && Time.realtimeSinceStartup - t0 < padLoadTimeoutSeconds)
+            {
+                if (!IsPadLoading && !IsPadReady)
+                    break;
+                yield return null;
+            }
 
-        if (!IsPadReady)
-        {
-            Debug.LogWarning("[LAUTIR] ChimeAndPad: pad not ready — skipping pad volume ramp");
-            yield break;
-        }
+            if (!IsPadReady)
+            {
+                Debug.LogWarning("[LAUTIR] ChimeAndPad: pad not ready — skipping pad volume ramp");
+                yield break;
+            }
 
-        int rampBpm = GlobalVariables.S != null ? GlobalVariables.S.bpm : bpm;
-        float volume = 0f;
-        float duration = 32f * 60f / rampBpm;
-        while (volume < 1f)
+            float volume = 0f;
+            float duration = GlobalVariables.BarDurationSeconds(8);
+            while (volume < 1f)
+            {
+                volume += Time.deltaTime / duration;
+                SetParam("padVolume", volume);
+                yield return null;
+            }
+            SetParam("padVolume", 1f);
+        }
+        finally
         {
-            volume += Time.deltaTime / duration;
-            SetParam("padVolume", volume);
-            yield return null;
+            _padRampCoroutine = null;
         }
     }
 

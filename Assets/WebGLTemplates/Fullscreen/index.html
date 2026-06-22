@@ -90,8 +90,8 @@
     <div id="info-modal">
       <button type="button" id="info-close" aria-label="Close">&times;</button>
       <h2>About LAUTIR</h2>
-      <p>This is a daily experience. Enter one six-letter word between 12 and 12:10pm each day. The project explores time, presence, and ritual.</p>
-      <button type="button" id="calendar-btn">Add daily noon reminder (6 days)</button>
+      <p>This is a daily experience. Enter one five-letter word between 12 and 12:10pm each day. The project explores time, presence, and ritual.</p>
+      <button type="button" id="calendar-btn">Add daily noon reminder (5 days)</button>
     </div>
   </div>
   <div id="unity-container">
@@ -119,7 +119,7 @@
       var START_HOUR = 12;         // noon
       var START_MINUTE = 0;
       var DURATION_MINUTES = 10;   // change if your window changes
-      var DAYS_COUNT = 6;          // total occurrences
+      var DAYS_COUNT = 5;          // total occurrences
 
       function pad2(n) { return n < 10 ? ("0" + n) : ("" + n); }
       function formatLocal(dt) {

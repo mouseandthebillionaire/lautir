@@ -10,6 +10,14 @@ public class GlobalVariables : MonoBehaviour
 
     public static GlobalVariables S;
 
+    /// <summary>Wall-clock seconds for <paramref name="bars"/> at the current BPM and time signature.</summary>
+    public static float BarDurationSeconds(int bars)
+    {
+        int bpm = S != null ? S.bpm : 60;
+        int beatsPerBar = S != null && S.timeSignature > 0 ? S.timeSignature : 4;
+        return bars * beatsPerBar * 60f / Mathf.Max(1, bpm);
+    }
+
     void Awake()
     {
         S = this;

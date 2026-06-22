@@ -10,14 +10,9 @@ public class AudioManager : MonoBehaviour
 #endif
     public string padCutoffParameterName = "PadCutoff";
 
-    // There are 6 stages of the music
+    // Five saved words → music stages 0–5 (drone + four melody layers in the legacy path).
     // Stage 0 is the default state, light ambient drone
-    // Stage 1 is the more complex drone? Sets the tone for the entire piece?
-    // Stage 2 is the first melody
-    // Stage 3 is the bassline?
-    // Stage 4 is the second melody
-    // Stage 5 is I don't know
-    // Stage 6 is the ending?
+    // Stage 1–5 are melody layers driven by words 0–4
     public int musicStage = 0;
 
 
@@ -73,7 +68,7 @@ public class AudioManager : MonoBehaviour
         if (stage == musicStage) return;
         musicStage = stage;
 
-        StartCoroutine(StageProgression(stage));
+        StartCoroutine(StageProgression(Mathf.Clamp(stage, 0, WordInputManager.SavedWordDaysCount)));
     }
 
     // Build up stages 0 → targetStage one at a time, hold, then fade everything out.
@@ -117,9 +112,6 @@ public class AudioManager : MonoBehaviour
                 break;
             case 5:
                 TriggerMelody(4);
-                break;
-            case 6: // ending
-                TriggerMelody(5);
                 break;
         }
         Debug.Log($"[LAUTIR] Stage step {stage}");

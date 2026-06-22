@@ -11,14 +11,13 @@ public class SongManager : MonoBehaviour
     public AudioMixer mixer;
     public string padCutoffParameterName = "PadCutoff";
 
-    // There are 6 stages of the music
+    // Five saved words → song stages 0–5 (drone, chime, bass, three melodies).
     // Stage 0 is the default state, light ambient drone
-    // Stage 1 is the more complex pad and a chime? Sets the tone for the entire piece.
-    // Stage 2 is the bassline
-    // Stage 3 is the first melody
-    // Stage 4 is the second melody
-    // Stage 5 is I don't know
-    // Stage 6 is the ending?
+    // Stage 1 is chime + pad (word 0)
+    // Stage 2 is the bassline (word 1)
+    // Stage 3 is the first melody (word 2)
+    // Stage 4 is the second melody (word 3)
+    // Stage 5 is the third melody (word 4)
     public int songStage = 0;
     public int stageToTest;
 
@@ -29,14 +28,10 @@ public class SongManager : MonoBehaviour
 
     [Range(0.05f, 1f)] public float approachCurvePower = 0.2f;
 
-    // Seconds between layering each stage in as we build up to the target.
-    public float stageStepDelay = 8f;
-    // Seconds to hold the full mix once the target stage is reached.
-    public float holdDuration = 30f;
-    // Seconds to fade everything out after the hold.
-    public float fadeOutDuration = 5f;
-    // Seconds to fade each melody's bus up from silence when it's triggered.
-    public float melodyFadeInDuration = 1f;
+    // Each layer fades in/out over this many bars; waits layerPlayBars at full level between steps.
+    public int layerFadeBars = 2;
+    public int layerPlayBars = 2;
+    public int fullSongPlayBars = 16;
     // Mixer exposed parameter (in dB) used to fade the whole mix out.
     public string masterVolumeParameterName = "MasterVolume";
 
@@ -79,84 +74,218 @@ public class SongManager : MonoBehaviour
         mixer.SetFloat(padCutoffParameterName, hz);
     }
 
-    // Jump to a specific stage. Plays through every stage from 0 up to this one in order,
-    // layering each in, then holds the full mix and fades out. Restarts if called again.
+    // Build 0 → targetStage, hold, then peel layers off back to stage 0. Restarts if called again.
     public void SetStage(int stage)
     {
-        if (stage == songStage) return;
-        songStage = stage;
+        if (_progression != null)
+            StopCoroutine(_progression);
 
-        StartCoroutine(StageProgression(stage));
+        _progression = StartCoroutine(StageProgression(Mathf.Clamp(stage, 0, WordInputManager.SavedWordDaysCount)));
     }
 
-    // Build up stages 0 → targetStage one at a time, hold, then fade everything out.
+    // Build up, hold at the target, then remove stages in reverse order.
     IEnumerator StageProgression(int targetStage)
     {
-        SetMasterVolumeDb(0f); // full volume for the build-up
-
+        SetMasterVolumeDb(0f);
         for (int s = 0; s <= targetStage; s++)
         {
-            ApplyStageStep(s);
-            yield return new WaitForSeconds(stageStepDelay);
+            songStage = s;
+            yield return ApplyStageStep(s);
+            if (s >= 1 && s < targetStage)
+                yield return new WaitForSeconds(BarSeconds(layerPlayBars));
         }
 
-        // Let the full mix play for a while...
-        yield return new WaitForSeconds(holdDuration);
+        // Play the song for a bit before fading out
+        yield return new WaitForSeconds(BarSeconds(fullSongPlayBars));
 
-        // ...then fade out.
-        yield return FadeOutMaster();
+        for (int s = targetStage; s >= 1; s--)
+        {
+            yield return RemoveStageStep(s);
+            songStage = s - 1;
+            if (s > 1)
+                yield return new WaitForSeconds(BarSeconds(layerPlayBars));
+        }
 
         _progression = null;
     }
 
-    // The single new layer that each stage adds on top of the previous ones.
-    void ApplyStageStep(int stage)
+    float BarSeconds(int bars) => GlobalVariables.BarDurationSeconds(bars);
+    float FadeSeconds => BarSeconds(layerFadeBars);
+
+    IEnumerator ApplyStageStep(int stage)
     {
         switch (stage)
         {
-            case 0: // light ambient drone — the default bed, nothing to add
+            case 0:
                 break;
-            case 1: // chimes (and drone? maybe split this into a different stage)
-                LoadChimeAndPad();
+            case 1:
+                if (chimeAndPadScript != null)
+                    yield return chimeAndPadScript.ArmChimeFromSavedWord();
+                yield return FadeChimeIn();
                 Debug.Log("Chime and pad loaded");
                 break;
-            case 2: // bassline
+            case 2:
                 TriggerBassline(1);
+                yield return new WaitForSeconds(0.1f);
+                yield return FadeBassIn();
                 Debug.Log("Bassline triggered");
                 break;
-            case 3: // first melody
+            case 3:
                 TriggerMelody(0);
+                yield return new WaitForSeconds(0.1f);
+                yield return RampMelodyVolumeUp(0);
                 Debug.Log("First melody triggered");
                 break;
             case 4:
                 TriggerMelody(1);
+                yield return new WaitForSeconds(0.1f);
+                yield return RampMelodyVolumeUp(1);
                 Debug.Log("Second melody triggered");
                 break;
             case 5:
-                TriggerMelody(4);
-                break;
-            case 6: // ending
-                TriggerMelody(5);
+                TriggerMelody(2);
+                yield return new WaitForSeconds(0.1f);
+                yield return RampMelodyVolumeUp(2);
                 break;
         }
-        
     }
 
-    // Fade the whole mix to silence over fadeOutDuration via the mixer's master volume (dB).
-    IEnumerator FadeOutMaster()
+    IEnumerator RemoveStageStep(int stage)
     {
-        if (mixer == null || string.IsNullOrEmpty(masterVolumeParameterName))
-            yield break;
+        switch (stage)
+        {
+            case 0:
+                break;
+            case 1:
+                yield return FadeChimeAndPad();
+                Debug.Log("Chime and pad removed");
+                break;
+            case 2:
+                yield return FadeBass();
+                Debug.Log("Bassline removed");
+                break;
+            case 3:
+                yield return RampMelodyVolumeDown(0);
+                Debug.Log("First melody removed");
+                break;
+            case 4:
+                yield return RampMelodyVolumeDown(1);
+                Debug.Log("Second melody removed");
+                break;
+            case 5:
+                yield return RampMelodyVolumeDown(2);
+                break;
+        }
+    }
 
+    IEnumerator FadeChimeIn()
+    {
+        const int instance = 1;
         float elapsed = 0f;
-        while (elapsed < fadeOutDuration)
+        float dur = FadeSeconds;
+        while (elapsed < dur)
         {
             elapsed += Time.deltaTime;
-            float db = Mathf.Lerp(0f, SilenceDb, elapsed / fadeOutDuration);
-            mixer.SetFloat(masterVolumeParameterName, db);
+            RnboWebBridge.SetParamById(instance, "chime_and_pad/chimeVolume", Mathf.Lerp(0f, 1f, elapsed / dur));
             yield return null;
         }
-        mixer.SetFloat(masterVolumeParameterName, SilenceDb);
+        RnboWebBridge.SetParamById(instance, "chime_and_pad/chimeVolume", 1f);
+    }
+
+    IEnumerator FadeBassIn()
+    {
+        const int instance = 1;
+        const float target = 0.15f;
+        float elapsed = 0f;
+        float dur = FadeSeconds;
+        while (elapsed < dur)
+        {
+            elapsed += Time.deltaTime;
+            RnboWebBridge.SetParamById(instance, "bass/volume", Mathf.Lerp(0f, target, elapsed / dur));
+            yield return null;
+        }
+        RnboWebBridge.SetParamById(instance, "bass/volume", target);
+    }
+
+    IEnumerator FadeChimeAndPad()
+    {
+        chimeAndPadScript?.StopPadRamp();
+
+        const int instance = 1;
+        float elapsed = 0f;
+        float dur = FadeSeconds;
+        while (elapsed < dur)
+        {
+            elapsed += Time.deltaTime;
+            float v = Mathf.Lerp(1f, 0f, elapsed / dur);
+            RnboWebBridge.SetParamById(instance, "chime_and_pad/chimeVolume", v);
+            RnboWebBridge.SetParamById(instance, "chime_and_pad/padVolume", v);
+            yield return null;
+        }
+        RnboWebBridge.SetParamById(instance, "chime_and_pad/chimeVolume", 0f);
+        RnboWebBridge.SetParamById(instance, "chime_and_pad/padVolume", 0f);
+        RnboWebBridge.SetParamById(instance, "chime_and_pad/begin", 0f);
+    }
+
+    IEnumerator FadeBass()
+    {
+        const int instance = 1;
+        const float from = 0.15f;
+        float elapsed = 0f;
+        float dur = FadeSeconds;
+        while (elapsed < dur)
+        {
+            elapsed += Time.deltaTime;
+            RnboWebBridge.SetParamById(instance, "bass/volume", Mathf.Lerp(from, 0f, elapsed / dur));
+            yield return null;
+        }
+        RnboWebBridge.SetParamById(instance, "bass/volume", 0f);
+        RnboWebBridge.SetParamById(instance, "bass/begin", 0f);
+    }
+
+    IEnumerator RampMelodyVolumeUp(int melodyNum)
+    {
+        const int instance = 1;
+        string instrument = GetMelodyInstrumentName(melodyNum);
+        if (string.IsNullOrEmpty(instrument)) yield break;
+
+        float elapsed = 0f;
+        float dur = FadeSeconds;
+        while (elapsed < dur)
+        {
+            elapsed += Time.deltaTime;
+            RnboWebBridge.SetParamById(instance, instrument + "/volume", Mathf.Lerp(0f, 1f, elapsed / dur));
+            yield return null;
+        }
+        RnboWebBridge.SetParamById(instance, instrument + "/volume", 1f);
+    }
+
+    IEnumerator RampMelodyVolumeDown(int melodyNum)
+    {
+        const int instance = 1;
+        string instrument = GetMelodyInstrumentName(melodyNum);
+        if (string.IsNullOrEmpty(instrument)) yield break;
+
+        float elapsed = 0f;
+        float dur = FadeSeconds;
+        while (elapsed < dur)
+        {
+            elapsed += Time.deltaTime;
+            RnboWebBridge.SetParamById(instance, instrument + "/volume", Mathf.Lerp(1f, 0f, elapsed / dur));
+            yield return null;
+        }
+        RnboWebBridge.SetParamById(instance, instrument + "/volume", 0f);
+        RnboWebBridge.SetParamById(instance, instrument + "/begin", 0f);
+    }
+
+    string GetMelodyInstrumentName(int melodyNum)
+    {
+        if (instrumentScripts != null && melodyNum >= 0 && melodyNum < instrumentScripts.Length
+            && instrumentScripts[melodyNum] != null
+            && !string.IsNullOrEmpty(instrumentScripts[melodyNum].instrumentName))
+            return instrumentScripts[melodyNum].instrumentName;
+
+        return "melody_" + melodyNum;
     }
 
     void SetMasterVolumeDb(float db)
@@ -173,58 +302,37 @@ public class SongManager : MonoBehaviour
         chimeAndPadScript.PlayFromSavedWord();
     }
 
-    public void TriggerBassline(int basslineNum)
+    public void TriggerBassline(int _wordIndex)
     {
         if (bassScript == null) return;
         // word 0 = chime/pad, word 1 = baseline, word 2+ = melodies
-        int wordIndex = basslineNum + 1;
+        int wordIndex = _wordIndex;
         if (WordInputManager.S == null || WordInputManager.S.words == null
             || wordIndex < 0 || wordIndex >= WordInputManager.S.words.Count)
             return;
 
         string word = (WordInputManager.S.words[wordIndex] ?? "").Trim().ToUpperInvariant();
-        if (word.Length < 6)
+        if (word.Length < WordInputManager.MaxWordLength)
         {
-            Debug.LogWarning($"[LAUTIR] TriggerBassline: need a 6-letter word at index {wordIndex}, got \"{word}\".");
+            Debug.LogWarning($"[LAUTIR] TriggerBassline: need a {WordInputManager.MaxWordLength}-letter word at index {wordIndex}, got \"{word}\".");
             return;
         }
 
-        Debug.Log("Triggering Bassline " + basslineNum + " with word " + word);
+        Debug.Log("Triggering Bassline with word " + word);
         bassScript.ParseWord(word);
     }
 
     public void TriggerMelody(int melodyNum)
     {
-        if (instrumentScripts == null) return;
-        // for now the word is tied to the melody number 
-        // word0 = melody0, word1 = melody1, etc
-        string word = WordInputManager.S.words[melodyNum + 2];
+        if (instrumentScripts == null || WordInputManager.S?.words == null) return;
+
+        int wordIndex = melodyNum + 2;
+        if (wordIndex < 0 || wordIndex >= WordInputManager.S.words.Count)
+            return;
+
+        string word = WordInputManager.S.words[wordIndex];
         Debug.Log("Triggering Melody " + melodyNum + " with word " + word);
         instrumentScripts[melodyNum].ParseWord(word);
-
-        // Fade this melody's bus up from silence as it starts.
-        StartCoroutine(RampMelodyVolume(melodyNum));
-
-        // Tell the word display to display the word
-        // WordDisplay.S.DisplayWord(melodyNum);
-    }
-
-    // Ramp a melody's mixer bus from silence to full (dB) over melodyFadeInDuration.
-    // Should this happen in each instrument's script rather than here?
-    IEnumerator RampMelodyVolume(int melodyNum)
-    {
-        if (mixer == null) yield break;
-
-        string param = "Melody" + melodyNum + "Volume";
-        float elapsed = 0f;
-        float dur = Mathf.Max(0.01f, melodyFadeInDuration);
-        while (elapsed < dur)
-        {
-            elapsed += Time.deltaTime;
-            mixer.SetFloat(param, Mathf.Lerp(SilenceDb, 0f, elapsed / dur));
-            yield return null;
-        }
-        mixer.SetFloat(param, 0f);
     }
 
 }

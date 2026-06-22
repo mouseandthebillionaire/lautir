@@ -5,17 +5,17 @@ using UnityEngine;
 using TMPro;
 
 /// <summary>
-/// Six-letter word entry, PlayerPrefs persistence (6 slots), and fade in/out of the input field.
+/// Five-letter word entry, PlayerPrefs persistence (5 slots), and fade in/out of the input field.
 /// </summary>
 public class WordInputManager : MonoBehaviour
 {
     public TMP_InputField inputField;
     public GameObject submitButton;
     public string word;
-    const int MaxWordLength = 6;
+    public const int MaxWordLength = 5;
+    public const int SavedWordDaysCount = 5;
 
     const string SavedWordsKey = "lautir_words";
-    const int SavedWordDaysCount = 6;
     const char WordSeparator = '\n';
 
     public bool testWords = false;
@@ -31,10 +31,10 @@ public class WordInputManager : MonoBehaviour
         return count;
     }
 
-    /// <summary>True once all 6 days are used — no more words may be entered.</summary>
+    /// <summary>True once all 5 days are used — no more words may be entered.</summary>
     public static bool AllDaysUsed => SavedWordCount() >= SavedWordDaysCount;
 
-    /// <summary>[0] oldest … [5] newest; missing entries are empty strings.</summary>
+    /// <summary>[0] oldest … [4] newest; missing entries are empty strings.</summary>
     public static List<string> LoadWords()
     {
         var raw = PlayerPrefs.GetString(SavedWordsKey, "");
@@ -90,7 +90,7 @@ public class WordInputManager : MonoBehaviour
     
         if (testWords)
         {
-            words = new List<string> { "WHALES", "OCEANS", "SHARKS", "SQUIDS" };
+            words = new List<string> { "WHALE", "OCEAN", "SHARK", "SQUID", "CORAL" };
         }
         else
         {
@@ -206,7 +206,7 @@ public class WordInputManager : MonoBehaviour
 
     public void EnterWord()
     {
-        // Hard cap: once all 6 days are used, no more words can be added.
+        // Hard cap: once all 5 days are used, no more words can be added.
         if (AllDaysUsed)
         {
             HideInputField();
@@ -218,9 +218,7 @@ public class WordInputManager : MonoBehaviour
         AddWordToSlots(words, word);
         SaveWords(words.ToArray());
 
-        // Advance the Song Stage
-        // Stage is based on current word
-        int stageToLoad = GameManager.S.currentDay + 1;
+        int stageToLoad = SavedWordCount();
         Debug.Log("Setting Stage to " + stageToLoad);
         SongManager.S.SetStage(stageToLoad);
 
