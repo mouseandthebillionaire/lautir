@@ -190,6 +190,22 @@ Some issues that need to be addressed:
 
 &&&.*.((.( @.!!.@@ ^^.#.$.#
 
+## 06.22.26 | Song Done
+
+[Song Test (v2)](https://mouseandthebillionaire.github.io/lautir/songTest_v2/)
+
+Got the final song test up and running. Some notes about edits to to the program that went in to this version and thoughts for moving forward:
+
+- I cut the word count (and word letters) to five. There are a few reasons for this change. First, just so I didn't have to figure out a 6th instrument. Second, over the course of making this five-letter words have seemed easier to come up with. And lastly, I think maybe there's something nicer about a five-day experience over a six-day one? Not entirely sure why. Fits in the work week?
+- Added back in the washy ambient sounds which also change based on the song key. Might be fun to have these detune all the way to a really deep drone when you are far away from the designated time. 
+- I made the final instrument a third melody. It sounds nice, and there doesn't seem to be a need to reinvent the wheel here. So the instruments are chime + pad, bass, melody, melody, melody.
+- The five words in the above version are whale, ocean, shark, squid, and coral
+- It fades in and out now. It feels a tad long for the full song to play once everything is faded in (just over a minute), but that just might be my testing brain rather than my reflecting one.
+- Haven't implemented the variation in the chiming note. Not high priority, but will get around to that if I have the time
+- The last letter of the bass doesn't do anything right now. Could be nice to have that tied to the distance between the last letter and the first letter. Maybe be reverb? This would be in similar vein to how the melodies are using delay between the first and last letters so that could be a good correlation.
+
+
+
 ---
 ## Notes
 
