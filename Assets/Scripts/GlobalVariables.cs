@@ -9,7 +9,6 @@ public class GlobalVariables : MonoBehaviour
     public char[] letterCommonality = new char[] { 'E', 'T', 'A', 'O', 'I', 'N', 'S', 'R', 'H', 'D', 'L', 'U', 'C', 'M', 'F', 'Y', 'W', 'G', 'P', 'B', 'V', 'K', 'X', 'Q', 'J', 'Z' };
     public int currentDay = 0;
 
-    /// <summary>Ritual day (0–5). Updated by <see cref="GameManager.SyncCurrentDay"/>.</summary>
     public static int CurrentDay => S != null ? S.currentDay : 0;
     
     public static GlobalVariables S;

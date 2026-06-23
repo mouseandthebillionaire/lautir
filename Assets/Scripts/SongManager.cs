@@ -106,6 +106,8 @@ public class SongManager : MonoBehaviour
                 yield return new WaitForSeconds(BarSeconds(layerPlayBars));
         }
 
+        WordDisplay.S.FadeOutWordDisplay();
+
         _progression = null;
     }
 
