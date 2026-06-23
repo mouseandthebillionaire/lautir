@@ -16,13 +16,18 @@ public class WordInputManager : MonoBehaviour
     public const int SavedWordDaysCount = 5;
 
     const string SavedWordsKey = "lautir_words";
+    const string RitualSlotKey = "lautir_ritual_slot";
+    const string LastRitualDateKey = "lautir_last_ritual_date";
     const char WordSeparator = '\n';
 
     public bool testWords = false;
 
     public List<string> words;
 
-    /// <summary>Number of non-empty saved words (saturates at <see cref="SavedWordDaysCount"/>).</summary>
+    /// <summary>Next ritual slot to fill (0–5). Each committed day — word or missed blank — advances this.</summary>
+    public static int RitualDayIndex => LoadRitualDayIndex();
+
+    /// <summary>Number of non-empty saved words.</summary>
     public static int SavedWordCount()
     {
         int count = 0;
@@ -31,8 +36,8 @@ public class WordInputManager : MonoBehaviour
         return count;
     }
 
-    /// <summary>True once all 5 days are used — no more words may be entered.</summary>
-    public static bool AllDaysUsed => SavedWordCount() >= SavedWordDaysCount;
+    /// <summary>True once all 5 ritual days are committed (words and/or missed blanks).</summary>
+    public static bool AllDaysUsed => RitualDayIndex >= SavedWordDaysCount;
 
     /// <summary>[0] oldest … [4] newest; missing entries are empty strings.</summary>
     public static List<string> LoadWords()
@@ -50,33 +55,145 @@ public class WordInputManager : MonoBehaviour
         return result;
     }
 
-    static void AddWordToSlots(List<string> slots, string newWord)
+    static int LoadRitualDayIndex()
     {
-        if (slots == null) return;
-
-        while (slots.Count < SavedWordDaysCount) slots.Add("");
-        while (slots.Count > SavedWordDaysCount) slots.RemoveAt(0);
-
-        for (int i = 0; i < slots.Count; i++)
+        if (!PlayerPrefs.HasKey(RitualSlotKey))
         {
-            if (string.IsNullOrEmpty(slots[i]))
-            {
-                slots[i] = newWord;
-                return;
-            }
+            int count = 0;
+            foreach (var w in LoadWords())
+                if (!string.IsNullOrEmpty(w)) count++;
+            return count;
         }
+        return Mathf.Clamp(PlayerPrefs.GetInt(RitualSlotKey, 0), 0, SavedWordDaysCount);
+    }
 
-        slots.RemoveAt(0);
-        slots.Add(newWord);
+    static void SaveRitualDayIndex(int index)
+    {
+        PlayerPrefs.SetInt(RitualSlotKey, Mathf.Clamp(index, 0, SavedWordDaysCount));
+        PlayerPrefs.Save();
+    }
+
+    static DateTime? LoadLastRitualDate()
+    {
+        var raw = PlayerPrefs.GetString(LastRitualDateKey, "");
+        if (DateTime.TryParse(raw, out var d)) return d.Date;
+        return null;
+    }
+
+    static void SaveLastRitualDate(DateTime date)
+    {
+        PlayerPrefs.SetString(LastRitualDateKey, date.ToString("yyyy-MM-dd"));
+        PlayerPrefs.Save();
+    }
+
+    void EnsureWordsList()
+    {
+        words = LoadWords();
+        while (words.Count < SavedWordDaysCount) words.Add("");
+    }
+
+    /// <summary>Commit today's ritual slot (word or blank). Skips if today is already committed.</summary>
+    public void CommitRitualDay(string word)
+    {
+        if (testWords || RitualDayIndex >= SavedWordDaysCount) return;
+
+        var today = DateTime.Today;
+        var last = LoadLastRitualDate();
+        if (last.HasValue && last.Value >= today) return;
+
+        EnsureWordsList();
+        words[RitualDayIndex] = word ?? "";
+        SaveRitualDayIndex(RitualDayIndex + 1);
+        SaveLastRitualDate(today);
+        SaveWords(words.ToArray());
+        RefreshWords();
+        GameManager.S?.SyncCurrentDay();
+    }
+
+    /// <summary>Record a missed ritual day as a blank at the current slot index.</summary>
+    public void RecordMissedRitualDay() => CommitRitualDay("");
+
+    /// <summary>Fill blank slots for calendar days missed while the app was closed.</summary>
+    public void AdvanceForMissedCalendarDays(GameManager gm)
+    {
+        if (testWords || AllDaysUsed) return;
+
+        var last = LoadLastRitualDate();
+        if (!last.HasValue) return;
+
+        var today = DateTime.Today;
+        for (var d = last.Value.AddDays(1); d < today && !AllDaysUsed; d = d.AddDays(1))
+            CommitRitualDay("");
+
+        if (today > last.Value && !AllDaysUsed && gm != null && gm.IsPastTodaysRitualWindow())
+            CommitRitualDay("");
     }
 
     public static WordInputManager S;
 
+    static readonly string[] DefaultTestWords = { "WHALE", "OCEAN", "SHARK", "SQUID", "CORAL" };
+
     void Awake()
     {
-        S = this;
+        if (S != null && S != this)
+        {
+            if (ShouldReplaceSingleton(S, this))
+            {
+                Debug.LogWarning("[LAUTIR] Replacing duplicate WordInputManager with the wired instance.");
+                Destroy(S.gameObject);
+                S = this;
+            }
+            else
+            {
+                Debug.LogWarning("[LAUTIR] Duplicate WordInputManager — destroying extra.");
+                Destroy(gameObject);
+                return;
+            }
+        }
+        else
+        {
+            S = this;
+        }
+
         if (inputField != null)
             inputField.gameObject.SetActive(false);
+
+        RefreshWords();
+    }
+
+    static bool ShouldReplaceSingleton(WordInputManager current, WordInputManager candidate)
+    {
+        if (current.inputField == null && candidate.inputField != null) return true;
+        if (!current.testWords && candidate.testWords) return true;
+        return false;
+    }
+
+    void RefreshWords()
+    {
+        words = testWords
+            ? new List<string>(DefaultTestWords)
+            : LoadWords();
+    }
+
+    /// <summary>Returns the saved word at <paramref name="index"/>, or empty if missing/short.</summary>
+    public static string GetWordAt(int index)
+    {
+        if (index < 0 || index >= SavedWordDaysCount) return "";
+
+        if (S?.words != null && index < S.words.Count)
+        {
+            var fromList = (S.words[index] ?? "").Trim().ToUpperInvariant();
+            if (fromList.Length >= MaxWordLength) return fromList;
+        }
+
+        if (S != null && S.testWords && index < DefaultTestWords.Length)
+            return DefaultTestWords[index];
+
+        var loaded = LoadWords();
+        if (index < loaded.Count)
+            return (loaded[index] ?? "").Trim().ToUpperInvariant();
+
+        return "";
     }
 
     void Start()
@@ -87,15 +204,8 @@ public class WordInputManager : MonoBehaviour
             inputField.onValueChanged.AddListener(OnInputValueChanged);
             inputField.onEndEdit.AddListener(OnInputSubmit);
         }
-    
-        if (testWords)
-        {
-            words = new List<string> { "WHALE", "OCEAN", "SHARK", "SQUID", "CORAL" };
-        }
-        else
-        {
-            words = LoadWords();
-        }
+
+        RefreshWords();
         Reset();
         if (GameManager.S != null && GameManager.S.IsGameAvailable)
             ShowInputField();
@@ -200,13 +310,14 @@ public class WordInputManager : MonoBehaviour
     public void ClearSavedWords()
     {
         PlayerPrefs.DeleteKey(SavedWordsKey);
+        PlayerPrefs.DeleteKey(RitualSlotKey);
+        PlayerPrefs.DeleteKey(LastRitualDateKey);
         PlayerPrefs.Save();
-        words = LoadWords();
+        RefreshWords();
     }
 
     public void EnterWord()
     {
-        // Hard cap: once all 5 days are used, no more words can be added.
         if (AllDaysUsed)
         {
             HideInputField();
@@ -215,14 +326,14 @@ public class WordInputManager : MonoBehaviour
 
         if (inputField != null)
             word = inputField.text;
-        AddWordToSlots(words, word);
-        SaveWords(words.ToArray());
 
-        int stageToLoad = SavedWordCount();
+        GameManager.S?.NotifyWordEnteredThisWindow();
+        CommitRitualDay(word);
+
+        int stageToLoad = RitualDayIndex;
         Debug.Log("Setting Stage to " + stageToLoad);
         SongManager.S.SetStage(stageToLoad);
 
-        // Close it down
         GameManager.S.NotifyUserEndedWindow(DateTime.Now);
         GameManager.S.SetGameAvailable(false);
         HideInputField();

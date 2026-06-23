@@ -151,7 +151,7 @@ public class AudioManager : MonoBehaviour
         if (melodyScripts == null) return;
         // for now the word is tied to the melody number 
         // word0 = melody0, word1 = melody1, etc
-        string word = WordInputManager.S.words[melodyNum];
+        string word = WordInputManager.GetWordAt(melodyNum);
         Debug.Log("Triggering Melody " + melodyNum + " with word " + word);
         melodyScripts[melodyNum].ParseWord(word);
         melodyScripts[melodyNum].TriggerMelody();

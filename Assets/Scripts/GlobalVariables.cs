@@ -7,7 +7,11 @@ public class GlobalVariables : MonoBehaviour
     public int key = 0; // 0=Aminor, 1=Bminor, 2=Cminor, 3=Dminor, 4=Eminor
     public int timeSignature = 4; // 4/4, 3/4, 6/8, 9/8, 12/8   
     public char[] letterCommonality = new char[] { 'E', 'T', 'A', 'O', 'I', 'N', 'S', 'R', 'H', 'D', 'L', 'U', 'C', 'M', 'F', 'Y', 'W', 'G', 'P', 'B', 'V', 'K', 'X', 'Q', 'J', 'Z' };
+    public int currentDay = 0;
 
+    /// <summary>Ritual day (0–5). Updated by <see cref="GameManager.SyncCurrentDay"/>.</summary>
+    public static int CurrentDay => S != null ? S.currentDay : 0;
+    
     public static GlobalVariables S;
 
     /// <summary>Wall-clock seconds for <paramref name="bars"/> at the current BPM and time signature.</summary>

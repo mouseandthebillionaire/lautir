@@ -14,6 +14,15 @@ public class GameManager : MonoBehaviour
 
     public int currentDay = 0;
     
+    /// <summary>Ritual day (0–5): ritual slots committed so far (words + missed blanks). Synced to <see cref="GlobalVariables.currentDay"/>.</summary>
+    public void SyncCurrentDay()
+    {
+        currentDay = WordInputManager.RitualDayIndex;
+        if (GlobalVariables.S != null)
+            GlobalVariables.S.currentDay = currentDay;
+        Debug.Log("Current day: " + currentDay);
+    }
+
     public TMP_Text informationText;
 
     // Fader
@@ -56,6 +65,7 @@ public class GameManager : MonoBehaviour
     float _closedStartRealtime;
     // Set when the game closes (word entry or duration) so the "away" ramp can use that moment.
     DateTime? _userWindowEndTime;
+    bool _wordEnteredThisWindow;
 
     void Awake()
     {
@@ -70,9 +80,10 @@ public class GameManager : MonoBehaviour
             WipeExistingWords();
         }
 
-        // What day it is = how many words have been saved so far.
-        currentDay = WordInputManager.SavedWordCount();
-        Debug.Log("Current day: " + currentDay);
+        if (WordInputManager.S != null)
+            WordInputManager.S.AdvanceForMissedCalendarDays(this);
+
+        SyncCurrentDay();
 
         // Set the random wait time for this session.
         waitTime = Random.Range(waitMin, waitMax);
@@ -139,6 +150,16 @@ public class GameManager : MonoBehaviour
         var start = new TimeSpan(availableHour, availableMinute, 0);
         var end = start + TimeSpan.FromMinutes(availableDuration);
         return now >= start && now <= end;
+    }
+
+    /// <summary>True once today's ritual window has ended (used to record a missed day on launch).</summary>
+    public bool IsPastTodaysRitualWindow()
+    {
+        if (!enforceTimeWindow) return false;
+        var now = DateTime.Now;
+        var end = new DateTime(now.Year, now.Month, now.Day, availableHour, availableMinute, 0)
+            .AddMinutes(availableDuration);
+        return now > end;
     }
 
     // Runs every frame while counting down. When the random waitTime elapses, the game opens.
@@ -279,10 +300,14 @@ public class GameManager : MonoBehaviour
     // Flip availability: called after the countdown, from WordInputManager on word entry, or on auto-close.
     public void SetGameAvailable(bool available)
     {
+        if (!available && gameAvailable && !_wordEnteredThisWindow && WordInputManager.S != null)
+            WordInputManager.S.RecordMissedRitualDay();
+
         gameAvailable = available;
 
         if (available)
         {
+            _wordEnteredThisWindow = false;
             _availableStartRealtime = Time.realtimeSinceStartup;
             _phase = Phase.Available;
             if (WordInputManager.S != null)
@@ -306,11 +331,16 @@ public class GameManager : MonoBehaviour
         _userWindowEndTime = atTime;
     }
 
+    public void NotifyWordEnteredThisWindow() => _wordEnteredThisWindow = true;
+
     void WipeExistingWords()
     {
         PlayerPrefs.DeleteKey("lautir_words");
+        PlayerPrefs.DeleteKey("lautir_ritual_slot");
+        PlayerPrefs.DeleteKey("lautir_last_ritual_date");
         PlayerPrefs.Save();
         WordInputManager.S.ClearSavedWords();
+        SyncCurrentDay();
         wipeExistingWords = false;
     }
 }

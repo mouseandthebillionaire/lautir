@@ -117,17 +117,7 @@ public class ChimeAndPadScript : MonoBehaviour
         }
     }
 
-    string GetSavedWordAtWordIndex()
-    {
-        if (WordInputManager.S?.words != null && wordIndex >= 0 && wordIndex < WordInputManager.S.words.Count)
-            return (WordInputManager.S.words[wordIndex] ?? "").Trim().ToUpperInvariant();
-
-        var words = WordInputManager.LoadWords();
-        if (wordIndex >= 0 && wordIndex < words.Count)
-            return (words[wordIndex] ?? "").Trim().ToUpperInvariant();
-
-        return "";
-    }
+    string GetSavedWordAtWordIndex() => WordInputManager.GetWordAt(wordIndex);
 
     string PadPathForFirstLetter(char letter)
     {

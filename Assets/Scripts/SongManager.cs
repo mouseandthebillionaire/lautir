@@ -117,35 +117,44 @@ public class SongManager : MonoBehaviour
         switch (stage)
         {
             case 0:
+                WordDisplay.S.FadeInWordDisplay();
+                // 2 seconds to match word display fade in duration
+                yield return new WaitForSeconds(2f);
                 break;
             case 1:
+                WordDisplay.S.DisplayWord(0);
                 if (chimeAndPadScript != null)
                     yield return chimeAndPadScript.ArmChimeFromSavedWord();
                 yield return FadeChimeIn();
                 Debug.Log("Chime and pad loaded");
                 break;
             case 2:
+                WordDisplay.S.DisplayWord(1);
                 TriggerBassline(1);
                 yield return new WaitForSeconds(0.1f);
                 yield return FadeBassIn();
                 Debug.Log("Bassline triggered");
                 break;
             case 3:
+                WordDisplay.S.DisplayWord(2);
                 TriggerMelody(0);
                 yield return new WaitForSeconds(0.1f);
                 yield return RampMelodyVolumeUp(0);
                 Debug.Log("First melody triggered");
                 break;
             case 4:
+                WordDisplay.S.DisplayWord(3);
                 TriggerMelody(1);
                 yield return new WaitForSeconds(0.1f);
                 yield return RampMelodyVolumeUp(1);
                 Debug.Log("Second melody triggered");
                 break;
             case 5:
+                WordDisplay.S.DisplayWord(4);
                 TriggerMelody(2);
                 yield return new WaitForSeconds(0.1f);
                 yield return RampMelodyVolumeUp(2);
+                Debug.Log("Third melody triggered");
                 break;
         }
     }
@@ -157,22 +166,27 @@ public class SongManager : MonoBehaviour
             case 0:
                 break;
             case 1:
+                WordDisplay.S.ClearWord(0);
                 yield return FadeChimeAndPad();
                 Debug.Log("Chime and pad removed");
                 break;
             case 2:
+                WordDisplay.S.ClearWord(1);
                 yield return FadeBass();
                 Debug.Log("Bassline removed");
                 break;
             case 3:
+                WordDisplay.S.ClearWord(2);
                 yield return RampMelodyVolumeDown(0);
                 Debug.Log("First melody removed");
                 break;
             case 4:
+                WordDisplay.S.ClearWord(3);
                 yield return RampMelodyVolumeDown(1);
                 Debug.Log("Second melody removed");
                 break;
             case 5:
+                WordDisplay.S.ClearWord(4);
                 yield return RampMelodyVolumeDown(2);
                 break;
         }
@@ -305,13 +319,8 @@ public class SongManager : MonoBehaviour
     public void TriggerBassline(int _wordIndex)
     {
         if (bassScript == null) return;
-        // word 0 = chime/pad, word 1 = baseline, word 2+ = melodies
         int wordIndex = _wordIndex;
-        if (WordInputManager.S == null || WordInputManager.S.words == null
-            || wordIndex < 0 || wordIndex >= WordInputManager.S.words.Count)
-            return;
-
-        string word = (WordInputManager.S.words[wordIndex] ?? "").Trim().ToUpperInvariant();
+        string word = WordInputManager.GetWordAt(wordIndex);
         if (word.Length < WordInputManager.MaxWordLength)
         {
             Debug.LogWarning($"[LAUTIR] TriggerBassline: need a {WordInputManager.MaxWordLength}-letter word at index {wordIndex}, got \"{word}\".");
@@ -324,13 +333,10 @@ public class SongManager : MonoBehaviour
 
     public void TriggerMelody(int melodyNum)
     {
-        if (instrumentScripts == null || WordInputManager.S?.words == null) return;
+        if (instrumentScripts == null) return;
 
         int wordIndex = melodyNum + 2;
-        if (wordIndex < 0 || wordIndex >= WordInputManager.S.words.Count)
-            return;
-
-        string word = WordInputManager.S.words[wordIndex];
+        string word = WordInputManager.GetWordAt(wordIndex);
         Debug.Log("Triggering Melody " + melodyNum + " with word " + word);
         instrumentScripts[melodyNum].ParseWord(word);
     }
