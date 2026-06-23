@@ -264,8 +264,6 @@ public class ChimeAndPadScript : MonoBehaviour
     // Apply params and trigger the chime immediately; pad stays silent until its buffer is ready.
     public IEnumerator StartChime()
     {
-        RnboWebBridge.SetParamById(instanceIndex, "_bpm", bpm);
-        RnboWebBridge.SetParamById(instanceIndex, "_key", key);
 
         SetParam("timbre", timbre);
         SetParam("attack", attack);
@@ -283,6 +281,12 @@ public class ChimeAndPadScript : MonoBehaviour
         SetParam("begin", 1);
         SetParam("chimeVolume", 0f);
         SetParam("padVolume", 0f);
+
+        // Maybe we need to do this last?
+        RnboWebBridge.SetParamById(instanceIndex, "_bpm", bpm);
+        RnboWebBridge.SetParamById(instanceIndex, "_key", key);
+        Debug.Log($"[LAUTIR] ChimeAndPad: bpm={bpm}, key={key}");
+        
         yield break;
     }
 

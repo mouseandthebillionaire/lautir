@@ -1618,7 +1618,6 @@ GameObject:
   m_Component:
   - component: {fileID: 701589551}
   - component: {fileID: 701589550}
-  - component: {fileID: 701589549}
   m_Layer: 0
   m_Name: Audio
   m_TagString: Untagged
@@ -1626,23 +1625,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &701589549
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 701589548}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a6a5892f7b3c64a0ebf173aa049d8c65, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GlobalVariables
-  bpm: 60
-  key: 0
-  timeSignature: 4
-  letterCommonality: 4500540041004f0049004e0053005200480044004c00550043004d0046005900570047005000420056004b00580051004a005a00
-  currentDay: 0
 --- !u!114 &701589550
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1668,7 +1650,8 @@ MonoBehaviour:
   approachCurvePower: 0.2
   layerFadeBars: 2
   layerPlayBars: 2
-  fullSongPlayBars: 16
+  holdBarsByTargetStage: 000000000200000004000000080000000c00000010000000
+  fadeOutInBuildOrder: 1
   masterVolumeParameterName: MasterVolume
 --- !u!4 &701589551
 Transform:

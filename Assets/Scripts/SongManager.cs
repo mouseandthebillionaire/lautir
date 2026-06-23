@@ -31,7 +31,10 @@ public class SongManager : MonoBehaviour
     // Each layer fades in/out over this many bars; waits layerPlayBars at full level between steps.
     public int layerFadeBars = 2;
     public int layerPlayBars = 2;
-    public int fullSongPlayBars = 16;
+    // Hold at full build before teardown — index = target stage (0 drone … 5 full song).
+    public int[] holdBarsByTargetStage = { 0, 2, 4, 8, 12, 16 };
+    [Tooltip("If true, layers fade out in build order (chime first). If false, last layer in fades first.")]
+    public bool fadeOutInBuildOrder = false;
     // Mixer exposed parameter (in dB) used to fade the whole mix out.
     public string masterVolumeParameterName = "MasterVolume";
 
@@ -83,7 +86,7 @@ public class SongManager : MonoBehaviour
         _progression = StartCoroutine(StageProgression(Mathf.Clamp(stage, 0, WordInputManager.SavedWordDaysCount)));
     }
 
-    // Build up, hold at the target, then remove stages in reverse order.
+    // Build up, hold at the target, then peel layers off (order set by fadeOutInBuildOrder).
     IEnumerator StageProgression(int targetStage)
     {
         SetMasterVolumeDb(0f);
@@ -95,17 +98,30 @@ public class SongManager : MonoBehaviour
                 yield return new WaitForSeconds(BarSeconds(layerPlayBars));
         }
 
-        // Play the song for a bit before fading out
-        yield return new WaitForSeconds(BarSeconds(fullSongPlayBars));
+        yield return new WaitForSeconds(BarSeconds(HoldBarsForTargetStage(targetStage)));
 
-        for (int s = targetStage; s >= 1; s--)
+        if (fadeOutInBuildOrder)
         {
-            yield return RemoveStageStep(s);
-            songStage = s - 1;
-            if (s > 1)
-                yield return new WaitForSeconds(BarSeconds(layerPlayBars));
+            for (int s = 1; s <= targetStage; s++)
+            {
+                yield return RemoveStageStep(s);
+                songStage = targetStage - s;
+                if (s < targetStage)
+                    yield return new WaitForSeconds(BarSeconds(layerPlayBars));
+            }
+        }
+        else
+        {
+            for (int s = targetStage; s >= 1; s--)
+            {
+                yield return RemoveStageStep(s);
+                songStage = s - 1;
+                if (s > 1)
+                    yield return new WaitForSeconds(BarSeconds(layerPlayBars));
+            }
         }
 
+        songStage = 0;
         WordDisplay.S.FadeOutWordDisplay();
 
         _progression = null;
@@ -113,6 +129,14 @@ public class SongManager : MonoBehaviour
 
     float BarSeconds(int bars) => GlobalVariables.BarDurationSeconds(bars);
     float FadeSeconds => BarSeconds(layerFadeBars);
+
+    int HoldBarsForTargetStage(int targetStage)
+    {
+        if (holdBarsByTargetStage == null || holdBarsByTargetStage.Length == 0)
+            return 16;
+        int i = Mathf.Clamp(targetStage, 0, holdBarsByTargetStage.Length - 1);
+        return Mathf.Max(0, holdBarsByTargetStage[i]);
+    }
 
     IEnumerator ApplyStageStep(int stage)
     {
