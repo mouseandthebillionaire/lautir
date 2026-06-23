@@ -12,6 +12,9 @@ public class GameManager : MonoBehaviour
     // Wipe the existing words from the PlayerPrefs.
     public bool wipeExistingWords = false;
 
+    [Tooltip("Dev only: each load acts as a new ritual day so you can walk through all 5 days by reloading.")]
+    public bool testing = false;
+
     public int currentDay = 0;
     
     /// <summary>Ritual day (0–5): ritual slots committed so far (words + missed blanks). Synced to <see cref="GlobalVariables.currentDay"/>.</summary>
@@ -81,7 +84,12 @@ public class GameManager : MonoBehaviour
         }
 
         if (WordInputManager.S != null)
-            WordInputManager.S.AdvanceForMissedCalendarDays(this);
+        {
+            if (testing)
+                WordInputManager.S.PrepareTestingNewDayOnLoad();
+            else
+                WordInputManager.S.AdvanceForMissedCalendarDays(this);
+        }
 
         SyncCurrentDay();
 

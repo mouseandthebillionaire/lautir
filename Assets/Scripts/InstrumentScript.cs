@@ -83,7 +83,7 @@ public class InstrumentScript : MonoBehaviour
 
     public void ParseWord(string word)
     {
-        if (word == null || word.Length < WordInputManager.MaxWordLength) return;
+        if (!WordInputManager.IsPlayableWord(word)) return;
         this.letters = word.ToCharArray();
 
         RnboWebBridge.ResumeAudioOnUserGesture();

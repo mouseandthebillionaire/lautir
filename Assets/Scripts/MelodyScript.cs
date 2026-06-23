@@ -146,7 +146,7 @@ public class MelodyScript : MonoBehaviour
 
     public void ParseWord(string word)
     {
-        if (word == null || word.Length < WordInputManager.MaxWordLength) return;
+        if (!WordInputManager.IsPlayableWord(word)) return;
         this.letters = word.ToCharArray();
 
 #if UNITY_WEBGL && !UNITY_EDITOR

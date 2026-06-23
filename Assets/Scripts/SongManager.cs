@@ -125,37 +125,52 @@ public class SongManager : MonoBehaviour
                 break;
             case 1:
                 WordDisplay.S.DisplayWord(0);
-                if (chimeAndPadScript != null)
-                    yield return chimeAndPadScript.ArmChimeFromSavedWord();
-                yield return FadeChimeIn();
+                if (WordInputManager.IsPlayableWord(WordInputManager.GetWordAt(0)))
+                {
+                    if (chimeAndPadScript != null)
+                        yield return chimeAndPadScript.ArmChimeFromSavedWord();
+                    yield return FadeChimeIn();
+                }
                 Debug.Log("Chime and pad loaded");
                 break;
             case 2:
                 WordDisplay.S.DisplayWord(1);
-                TriggerBassline(1);
-                yield return new WaitForSeconds(0.1f);
-                yield return FadeBassIn();
+                if (WordInputManager.IsPlayableWord(WordInputManager.GetWordAt(1)))
+                {
+                    TriggerBassline(1);
+                    yield return new WaitForSeconds(0.1f);
+                    yield return FadeBassIn();
+                }
                 Debug.Log("Bassline triggered");
                 break;
             case 3:
                 WordDisplay.S.DisplayWord(2);
-                TriggerMelody(0);
-                yield return new WaitForSeconds(0.1f);
-                yield return RampMelodyVolumeUp(0);
+                if (WordInputManager.IsPlayableWord(WordInputManager.GetWordAt(2)))
+                {
+                    TriggerMelody(0);
+                    yield return new WaitForSeconds(0.1f);
+                    yield return RampMelodyVolumeUp(0);
+                }
                 Debug.Log("First melody triggered");
                 break;
             case 4:
                 WordDisplay.S.DisplayWord(3);
-                TriggerMelody(1);
-                yield return new WaitForSeconds(0.1f);
-                yield return RampMelodyVolumeUp(1);
+                if (WordInputManager.IsPlayableWord(WordInputManager.GetWordAt(3)))
+                {
+                    TriggerMelody(1);
+                    yield return new WaitForSeconds(0.1f);
+                    yield return RampMelodyVolumeUp(1);
+                }
                 Debug.Log("Second melody triggered");
                 break;
             case 5:
                 WordDisplay.S.DisplayWord(4);
-                TriggerMelody(2);
-                yield return new WaitForSeconds(0.1f);
-                yield return RampMelodyVolumeUp(2);
+                if (WordInputManager.IsPlayableWord(WordInputManager.GetWordAt(4)))
+                {
+                    TriggerMelody(2);
+                    yield return new WaitForSeconds(0.1f);
+                    yield return RampMelodyVolumeUp(2);
+                }
                 Debug.Log("Third melody triggered");
                 break;
         }
@@ -169,27 +184,32 @@ public class SongManager : MonoBehaviour
                 break;
             case 1:
                 WordDisplay.S.ClearWord(0);
-                yield return FadeChimeAndPad();
+                if (WordInputManager.IsPlayableWord(WordInputManager.GetWordAt(0)))
+                    yield return FadeChimeAndPad();
                 Debug.Log("Chime and pad removed");
                 break;
             case 2:
                 WordDisplay.S.ClearWord(1);
-                yield return FadeBass();
+                if (WordInputManager.IsPlayableWord(WordInputManager.GetWordAt(1)))
+                    yield return FadeBass();
                 Debug.Log("Bassline removed");
                 break;
             case 3:
                 WordDisplay.S.ClearWord(2);
-                yield return RampMelodyVolumeDown(0);
+                if (WordInputManager.IsPlayableWord(WordInputManager.GetWordAt(2)))
+                    yield return RampMelodyVolumeDown(0);
                 Debug.Log("First melody removed");
                 break;
             case 4:
                 WordDisplay.S.ClearWord(3);
-                yield return RampMelodyVolumeDown(1);
+                if (WordInputManager.IsPlayableWord(WordInputManager.GetWordAt(3)))
+                    yield return RampMelodyVolumeDown(1);
                 Debug.Log("Second melody removed");
                 break;
             case 5:
                 WordDisplay.S.ClearWord(4);
-                yield return RampMelodyVolumeDown(2);
+                if (WordInputManager.IsPlayableWord(WordInputManager.GetWordAt(4)))
+                    yield return RampMelodyVolumeDown(2);
                 break;
         }
     }
@@ -323,9 +343,9 @@ public class SongManager : MonoBehaviour
         if (bassScript == null) return;
         int wordIndex = _wordIndex;
         string word = WordInputManager.GetWordAt(wordIndex);
-        if (word.Length < WordInputManager.MaxWordLength)
+        if (!WordInputManager.IsPlayableWord(word))
         {
-            Debug.LogWarning($"[LAUTIR] TriggerBassline: need a {WordInputManager.MaxWordLength}-letter word at index {wordIndex}, got \"{word}\".");
+            Debug.Log($"[LAUTIR] Skipping bass at index {wordIndex} (missed day).");
             return;
         }
 
@@ -339,6 +359,12 @@ public class SongManager : MonoBehaviour
 
         int wordIndex = melodyNum + 2;
         string word = WordInputManager.GetWordAt(wordIndex);
+        if (!WordInputManager.IsPlayableWord(word))
+        {
+            Debug.Log($"[LAUTIR] Skipping melody {melodyNum} at index {wordIndex} (missed day).");
+            return;
+        }
+
         Debug.Log("Triggering Melody " + melodyNum + " with word " + word);
         instrumentScripts[melodyNum].ParseWord(word);
     }

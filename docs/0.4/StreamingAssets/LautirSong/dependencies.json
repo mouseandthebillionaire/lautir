@@ -1,0 +1,22 @@
+[
+  {
+    "id": "pad",
+    "file": "media/pad_A.wav"
+  },
+  {
+    "id": "a0",
+    "file": "media/ambience_0.wav"
+  },
+  {
+    "id": "a1",
+    "file": "media/ambience_1.wav"
+  },
+  {
+    "id": "a2",
+    "file": "media/ambience_2.wav"
+  },
+  {
+    "id": "a3",
+    "file": "media/ambience_3.wav"
+  }
+]

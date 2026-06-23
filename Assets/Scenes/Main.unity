@@ -2176,15 +2176,12 @@ MonoBehaviour:
   inputField: {fileID: 825567283}
   submitButton: {fileID: 1924518865}
   word: 
-  testWords: 1
-  words:
-  - WHALE
-  - SQUID
-  - CORAL
-  - OCEAN
-  - SHARK
+  testWords: 0
+  words: []
   showFadeDuration: 0.5
   hideFadeDuration: 0.5
+  jiggleDuration: 0.45
+  jiggleDistance: 12
 --- !u!1 &833593571
 GameObject:
   m_ObjectHideFlags: 0
@@ -2316,10 +2313,10 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: xxxxxx
+  m_text: xxxxx
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: b9b443ba462e64dd19723a74b7434d4d, type: 2}
+  m_sharedMaterial: {fileID: 2944358396577658523, guid: b9b443ba462e64dd19723a74b7434d4d, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -2349,7 +2346,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 16
+  m_fontStyle: 17
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -2592,8 +2589,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u200B"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: b9b443ba462e64dd19723a74b7434d4d, type: 2}
+  m_sharedMaterial: {fileID: 2944358396577658523, guid: b9b443ba462e64dd19723a74b7434d4d, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -2623,7 +2620,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 16
+  m_fontStyle: 17
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -3153,7 +3150,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1222534982}
-  - component: {fileID: 1222534981}
   m_Layer: 0
   m_Name: Words
   m_TagString: Untagged
@@ -3161,21 +3157,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1222534981
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1222534980}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 75d08ee32f2a649469bb8cff55c7f7fb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  wordAlpha: 0.1
-  backgroundImage: {fileID: 0}
-  wordTextObjects: {fileID: 0}
 --- !u!4 &1222534982
 Transform:
   m_ObjectHideFlags: 0
@@ -3651,6 +3632,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1535637604}
   - component: {fileID: 1535637605}
+  - component: {fileID: 1535637606}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -3685,23 +3667,41 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0140c87c9016f41deafc2cdeb491ce2a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  wipeExistingWords: 1
+  wipeExistingWords: 0
+  testing: 1
   currentDay: 0
   informationText: {fileID: 0}
   fader: {fileID: 582086080}
   fadeDuration: 1
-  availableHour: 7
-  availableMinute: 53
+  availableHour: 10
+  availableMinute: 31
   availableDuration: 5
   waitTime: 0
   waitMin: 0
-  waitMax: 300
+  waitMax: 20
   waitTimeRemaining: 0
   eventMinutes: 2
   preAlignmentBlend: 0.4
   awayRampMinutes: 720
   awayCurvePower: 0.5
-  enforceTimeWindow: 1
+  enforceTimeWindow: 0
+--- !u!114 &1535637606
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1535637603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6a5892f7b3c64a0ebf173aa049d8c65, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GlobalVariables
+  bpm: 60
+  key: 0
+  timeSignature: 4
+  letterCommonality: 4500540041004f0049004e0053005200480044004c00550043004d0046005900570047005000420056004b00580051004a005a00
+  currentDay: 0
 --- !u!1 &1548702009
 GameObject:
   m_ObjectHideFlags: 0

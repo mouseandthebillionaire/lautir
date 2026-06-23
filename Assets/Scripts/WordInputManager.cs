@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using TMPro;
 
@@ -14,6 +15,7 @@ public class WordInputManager : MonoBehaviour
     public string word;
     public const int MaxWordLength = 5;
     public const int SavedWordDaysCount = 5;
+    public const string MissedWordPlaceholder = "-----";
 
     const string SavedWordsKey = "lautir_words";
     const string RitualSlotKey = "lautir_ritual_slot";
@@ -27,14 +29,20 @@ public class WordInputManager : MonoBehaviour
     /// <summary>Next ritual slot to fill (0–5). Each committed day — word or missed blank — advances this.</summary>
     public static int RitualDayIndex => LoadRitualDayIndex();
 
-    /// <summary>Number of non-empty saved words.</summary>
+    /// <summary>Number of saved words with real content (excludes missed-day placeholders).</summary>
     public static int SavedWordCount()
     {
         int count = 0;
         foreach (var w in LoadWords())
-            if (!string.IsNullOrEmpty(w)) count++;
+            if (IsPlayableWord(w)) count++;
         return count;
     }
+
+    public static bool IsMissedWord(string word) =>
+        string.Equals((word ?? "").Trim(), MissedWordPlaceholder, StringComparison.OrdinalIgnoreCase);
+
+    public static bool IsPlayableWord(string word) =>
+        !string.IsNullOrEmpty(word) && word.Length >= MaxWordLength && !IsMissedWord(word);
 
     /// <summary>True once all 5 ritual days are committed (words and/or missed blanks).</summary>
     public static bool AllDaysUsed => RitualDayIndex >= SavedWordDaysCount;
@@ -110,10 +118,10 @@ public class WordInputManager : MonoBehaviour
         GameManager.S?.SyncCurrentDay();
     }
 
-    /// <summary>Record a missed ritual day as a blank at the current slot index.</summary>
-    public void RecordMissedRitualDay() => CommitRitualDay("");
+    /// <summary>Record a missed ritual day as <see cref="MissedWordPlaceholder"/> at the current slot index.</summary>
+    public void RecordMissedRitualDay() => CommitRitualDay(MissedWordPlaceholder);
 
-    /// <summary>Fill blank slots for calendar days missed while the app was closed.</summary>
+    /// <summary>Fill missed slots for calendar days missed while the app was closed.</summary>
     public void AdvanceForMissedCalendarDays(GameManager gm)
     {
         if (testWords || AllDaysUsed) return;
@@ -123,15 +131,27 @@ public class WordInputManager : MonoBehaviour
 
         var today = DateTime.Today;
         for (var d = last.Value.AddDays(1); d < today && !AllDaysUsed; d = d.AddDays(1))
-            CommitRitualDay("");
+            CommitRitualDay(MissedWordPlaceholder);
 
         if (today > last.Value && !AllDaysUsed && gm != null && gm.IsPastTodaysRitualWindow())
-            CommitRitualDay("");
+            CommitRitualDay(MissedWordPlaceholder);
+    }
+
+    /// <summary>Dev only (<see cref="GameManager.testing"/>): rewind last ritual date so reload can commit the next slot.</summary>
+    public void PrepareTestingNewDayOnLoad()
+    {
+        if (testWords || AllDaysUsed) return;
+
+        var last = LoadLastRitualDate();
+        if (!last.HasValue) return;
+
+        if (last.Value >= DateTime.Today)
+            SaveLastRitualDate(DateTime.Today.AddDays(-1));
     }
 
     public static WordInputManager S;
 
-    static readonly string[] DefaultTestWords = { "WHALE", "OCEAN", "SHARK", "SQUID", "CORAL" };
+    static readonly string[] DefaultTestWords = { "WHALE", "-----", "SHARK", "SQUID", "CORAL" };
 
     void Awake()
     {
@@ -175,7 +195,7 @@ public class WordInputManager : MonoBehaviour
             : LoadWords();
     }
 
-    /// <summary>Returns the saved word at <paramref name="index"/>, or empty if missing/short.</summary>
+    /// <summary>Returns the saved word at <paramref name="index"/>, placeholder for missed days, or empty if uncommitted.</summary>
     public static string GetWordAt(int index)
     {
         if (index < 0 || index >= SavedWordDaysCount) return "";
@@ -183,6 +203,7 @@ public class WordInputManager : MonoBehaviour
         if (S?.words != null && index < S.words.Count)
         {
             var fromList = (S.words[index] ?? "").Trim().ToUpperInvariant();
+            if (IsMissedWord(fromList)) return MissedWordPlaceholder;
             if (fromList.Length >= MaxWordLength) return fromList;
         }
 
@@ -191,7 +212,11 @@ public class WordInputManager : MonoBehaviour
 
         var loaded = LoadWords();
         if (index < loaded.Count)
-            return (loaded[index] ?? "").Trim().ToUpperInvariant();
+        {
+            var fromPrefs = (loaded[index] ?? "").Trim().ToUpperInvariant();
+            if (IsMissedWord(fromPrefs)) return MissedWordPlaceholder;
+            return fromPrefs;
+        }
 
         return "";
     }
@@ -201,8 +226,10 @@ public class WordInputManager : MonoBehaviour
         if (inputField != null)
         {
             inputField.characterLimit = MaxWordLength;
+            inputField.lineType = TMP_InputField.LineType.SingleLine;
+            inputField.onFocusSelectAll = false;
             inputField.onValueChanged.AddListener(OnInputValueChanged);
-            inputField.onEndEdit.AddListener(OnInputSubmit);
+            inputField.onSubmit.AddListener(_ => SubmitFromInput());
         }
 
         RefreshWords();
@@ -211,29 +238,114 @@ public class WordInputManager : MonoBehaviour
             ShowInputField();
     }
 
+    void Update()
+    {
+        if (inputField == null || !inputField.isFocused) return;
+        if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
+            SubmitFromInput();
+    }
+
+    void SubmitFromInput()
+    {
+        if (inputField == null || !inputField.gameObject.activeInHierarchy) return;
+        if (_submitFrame == Time.frameCount) return;
+        _submitFrame = Time.frameCount;
+        EnterWord();
+    }
+
     void OnInputValueChanged(string value)
     {
         if (inputField == null) return;
 
-        // Avoid rewriting text every frame; normalize only on user edits (caret/focus stay stable).
-        var normalized = (value ?? "").ToUpperInvariant();
+        var raw = value ?? "";
+        var filtered = new StringBuilder();
+        bool hadInvalid = false;
+
+        foreach (char c in raw)
+        {
+            if (char.IsLetter(c))
+                filtered.Append(char.ToUpperInvariant(c));
+            else
+                hadInvalid = true;
+        }
+
+        var normalized = filtered.ToString();
         if (normalized.Length > MaxWordLength)
             normalized = normalized.Substring(0, MaxWordLength);
 
-        if (!string.Equals(normalized, value, StringComparison.Ordinal))
+        if (hadInvalid || !string.Equals(normalized, raw, StringComparison.Ordinal))
             inputField.SetTextWithoutNotify(normalized);
+
+        if (hadInvalid)
+            PlayInputJiggle();
     }
 
-    void OnInputSubmit(string value)
+    void ClearInputSelection()
     {
-        if (!GameManager.S.IsGameAvailable || inputField == null) return;
-        var text = (inputField.text ?? "").Trim().ToUpper();
-        if (text.Length == MaxWordLength)
-            EnterWord();
+        if (inputField == null) return;
+        int end = inputField.text?.Length ?? 0;
+        inputField.caretPosition = end;
+        inputField.selectionAnchorPosition = end;
+        inputField.selectionFocusPosition = end;
     }
 
     public float showFadeDuration = 0.5f;
     public float hideFadeDuration = 0.5f;
+    public float jiggleDuration = 0.45f;
+    public float jiggleDistance = 12f;
+
+    Coroutine _jiggleCoroutine;
+    int _submitFrame = -1;
+
+    /// <summary>True when <paramref name="text"/> is exactly five letters (A–Z).</summary>
+    public bool CheckWord(string text)
+    {
+        if (string.IsNullOrEmpty(text) || text.Length != MaxWordLength)
+            return false;
+
+        for (int i = 0; i < text.Length; i++)
+        {
+            if (!char.IsLetter(text[i]))
+                return false;
+        }
+
+        return true;
+    }
+
+    void PlayInputJiggle()
+    {
+        if (inputField == null) return;
+
+        if (_jiggleCoroutine != null)
+            StopCoroutine(_jiggleCoroutine);
+        _jiggleCoroutine = StartCoroutine(JiggleInputField());
+    }
+
+    IEnumerator JiggleInputField()
+    {
+        var rt = inputField.transform as RectTransform;
+        if (rt == null)
+        {
+            _jiggleCoroutine = null;
+            yield break;
+        }
+
+        Vector2 basePos = rt.anchoredPosition;
+        float elapsed = 0f;
+
+        while (elapsed < jiggleDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / jiggleDuration;
+            float offset = Mathf.Sin(t * Mathf.PI * 6f) * jiggleDistance * (1f - t);
+            rt.anchoredPosition = basePos + new Vector2(offset, 0f);
+            yield return null;
+        }
+
+        rt.anchoredPosition = basePos;
+        inputField.ActivateInputField();
+        _jiggleCoroutine = null;
+    }
 
     public void ShowInputField()
     {
@@ -325,7 +437,17 @@ public class WordInputManager : MonoBehaviour
         }
 
         if (inputField != null)
-            word = inputField.text;
+            word = (inputField.text ?? "").Trim().ToUpperInvariant();
+
+        if (!CheckWord(word))
+        {
+            PlayInputJiggle();
+            ClearInputSelection();
+            return;
+        }
+
+        if (IsMissedWord(word))
+            return;
 
         GameManager.S?.NotifyWordEnteredThisWindow();
         CommitRitualDay(word);

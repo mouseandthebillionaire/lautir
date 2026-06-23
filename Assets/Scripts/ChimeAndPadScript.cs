@@ -108,7 +108,8 @@ public class ChimeAndPadScript : MonoBehaviour
         for (int i = 0; i < 30; i++)
         {
             string word = GetSavedWordAtWordIndex();
-            if (word.Length >= RequiredWordLength)
+            if (WordInputManager.IsMissedWord(word)) yield break;
+            if (WordInputManager.IsPlayableWord(word))
             {
                 EnsurePadLoading(PadPathForFirstLetter(word[0]));
                 yield break;
@@ -150,7 +151,10 @@ public class ChimeAndPadScript : MonoBehaviour
     public IEnumerator ArmChimeFromSavedWord()
     {
         string word = GetSavedWordAtWordIndex();
-        if (word.Length < RequiredWordLength)
+        if (WordInputManager.IsMissedWord(word))
+            yield break;
+
+        if (!WordInputManager.IsPlayableWord(word))
         {
             Debug.LogWarning(
                 $"[LAUTIR] ChimeAndPad: need a {RequiredWordLength}-letter word at index {wordIndex}, got \"{word}\". " +

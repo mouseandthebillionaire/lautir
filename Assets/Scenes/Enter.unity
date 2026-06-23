@@ -1114,6 +1114,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 75d08ee32f2a649469bb8cff55c7f7fb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  wordAlpha: 0.1
+  backgroundImage: {fileID: 0}
   wordTextObjects: {fileID: 0}
 --- !u!1 &407072193
 GameObject:
@@ -2318,6 +2320,7 @@ MonoBehaviour:
   inputField: {fileID: 825567283}
   submitButton: {fileID: 1924518865}
   word: 
+  testWords: 0
   words:
   - 
   - 
@@ -2327,6 +2330,8 @@ MonoBehaviour:
   - 
   showFadeDuration: 0.5
   hideFadeDuration: 0.5
+  jiggleDuration: 0.45
+  jiggleDistance: 12
 --- !u!1 &867943229
 GameObject:
   m_ObjectHideFlags: 0
@@ -2405,7 +2410,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: xxxxxx
+  m_text: xxxxx
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -4437,9 +4442,12 @@ MonoBehaviour:
   inputField: {fileID: 0}
   submitButton: {fileID: 1924518865}
   word: 
+  testWords: 0
   words: []
   showFadeDuration: 0.5
   hideFadeDuration: 0.5
+  jiggleDuration: 0.45
+  jiggleDistance: 12
 --- !u!1 &1535637603
 GameObject:
   m_ObjectHideFlags: 0
