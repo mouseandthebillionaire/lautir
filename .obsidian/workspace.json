@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Process/Journal.md",
+                "file": "Process/GamePoemsSubmission.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Journal"
+              "title": "GamePoemsSubmission"
             }
           }
         ]
@@ -185,29 +185,30 @@
   },
   "active": "4b9ff604c6bf1229",
   "lastOpenFiles": [
-    "Library/LastBuild.buildreport",
-    "Temp/ADB-Refresh013100834d05844b982627f5cd5740f5",
-    "Library/Bee/buildprogram1.traceevents",
-    "Library/Bee/TundraBuildState.state",
-    "Library/Bee/artifacts/WebGL0.4.loader.js",
-    "Builds/0.4/Build/0.4.wasm",
-    "Library/Bee/buildprogram0.traceevents",
-    "Library/Bee/artifacts/WebGL/build/debug_WebGL_wasm/build.wasm.tmp2f06946",
-    "Library/Bee/artifacts/WebGL/il2cppOutput/build/GameAssembly.a",
-    "Library/Bee/artifacts/WebGL/GameAssembly/release_WebGL_wasm/GameAssembly.a",
-    "Library/Bee/artifacts/WebGL/GameAssembly/release_WebGL_wasm/GameAssembly.a.temp-archive-6bd5513.a",
+    "docs/mobileTest/Build/mobileTest.wasm",
+    "docs/mobileTest/Build/mobileTest.loader.js",
+    "docs/mobileTest/Build/mobileTest.framework.js",
+    "docs/mobileTest/Build/mobileTest.data",
+    "docs/mobileTest/Build",
+    "docs/mobileTest/StreamingAssets/LautirSong/media/pad_X.wav",
+    "docs/mobileTest/StreamingAssets/LautirSong/media/pad_V.wav",
+    "docs/mobileTest/StreamingAssets/LautirSong/media/pad_Z.wav",
+    "docs/mobileTest/StreamingAssets/LautirSong/media/pad_Y.wav",
+    "docs/mobileTest/StreamingAssets/LautirSong/media/pad_W.wav",
+    "docs/mobileTest/StreamingAssets/LautirSong/media/pad_D.wav",
+    "Process/Journal.md",
+    "Process/GamePoemsSubmission.md",
+    "Process/Media/gamepoems-photoAndIllustration-frame.png",
+    "Process/Media/gamepoems-wanderers-frame.png",
+    "Process/Media/gamepoems-illustrationAlignment-frame.png",
+    "Process/Media/gamepoems-screenshot-1280x720.png",
     "Assets/Resources/Water_1/layer_11.png",
     "Assets/Resources/Water_1/layer_10.png",
     "Assets/Resources/Water_1/layer_9.png",
     "Assets/Resources/Water_1/layer_8.png",
     "Assets/Resources/Water_1/layer_7.png",
     "Assets/Resources/Water_1/layer_6.png",
-    "Assets/Resources/Water_1/layer_5.png",
-    "Assets/Resources/Water_1/layer_4.png",
-    "Assets/Resources/Water_1/layer_3.png",
-    "Assets/Resources/Water_1/layer_2.png",
     "bridge.md",
-    "Process/Journal.md",
     "Tools/magic-url-auth/node_modules/sqlite3/README.md",
     "Tools/magic-url-auth/node_modules/node-gyp/README.md",
     "Tools/magic-url-auth/node_modules/node-gyp/gyp/README.md",
@@ -229,7 +230,6 @@
     "Tools/magic-url-auth/node_modules/encoding/node_modules/iconv-lite/README.md",
     "Tools/magic-url-auth/node_modules/socks/README.md",
     "Tools/magic-url-auth/node_modules/ip-address/README.md",
-    "Tools/magic-url-auth/node_modules/tar/README.md",
-    "Tools/magic-url-auth/node_modules/object-inspect/CHANGELOG.md"
+    "Tools/magic-url-auth/node_modules/tar/README.md"
   ]
 }

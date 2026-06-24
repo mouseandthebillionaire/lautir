@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <title>New Unity Project</title>
+  <title>LAUTIR</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; height: 100%; overflow: hidden; }
@@ -13,12 +13,12 @@
       height: 100%;
       left: 0;
       top: 0;
-      background: ##1F1F20;
+      background: #1F1F20;
     }
     #unity-canvas {
       width: 100%;
       height: 100%;
-      background: ##1F1F20;
+      background: #1F1F20;
     }
     #unity-loading-bar {
       position: absolute;
@@ -115,7 +115,7 @@
 
       // Calendar reminder download (client-side .ics)
       var calendarBtn = document.getElementById("calendar-btn");
-      var GAME_URL = "https://mouseandthebillionaire.github.io/lautir/0.2/";
+      var GAME_URL = "https://mouseandthebillionaire.github.io/lautir/songTest_v2/";
       var START_HOUR = 12;         // noon
       var START_MINUTE = 0;
       var DURATION_MINUTES = 10;   // change if your window changes
@@ -189,9 +189,9 @@
         frameworkUrl: buildUrl + "/songTest.framework.js",
         codeUrl: buildUrl + "/songTest.wasm",
         streamingAssetsUrl: "StreamingAssets",
-        companyName: "DefaultCompany",
-        //productName: "New Unity Project",
-        //productVersion: "1.0",
+        companyName: "M Bethancourt",
+        productName: "LAUTIR",
+        productVersion: "songTest_v2",
       }, function (progress) {
         var progressBarFull = document.querySelector("#unity-progress-bar-full");
         progressBarFull.style.width = 100 * progress + "%";
