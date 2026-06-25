@@ -80,6 +80,8 @@ public class SongManager : MonoBehaviour
     // Build 0 → targetStage, hold, then peel layers off back to stage 0. Restarts if called again.
     public void SetStage(int stage)
     {
+        RnboWebBridge.ResumeAudioOnUserGesture();
+
         if (_progression != null)
             StopCoroutine(_progression);
 

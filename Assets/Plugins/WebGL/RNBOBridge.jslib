@@ -1,28 +1,6 @@
 mergeInto(LibraryManager.library, {
   RNBO_ResumeAudioOnGesture: function() {
-    if (!window.__lautirRnbo) {
-      window.__lautirRnbo = { instances: {}, patcherCache: {}, depsCache: {}, audioContext: null };
-    }
-    const ctx = (typeof WEBAudio !== "undefined" && WEBAudio.audioContext)
-      ? WEBAudio.audioContext
-      : window.__lautirRnbo.audioContext;
-    if (!ctx) return;
-    if (ctx.state !== "running") {
-      ctx.resume().then(function() {
-        const st = window.__lautirRnbo;
-        if (!st || !st.instances || typeof RNBO === "undefined") return;
-        Object.keys(st.instances).forEach(function(key) {
-          const slot = st.instances[key];
-          if (!slot || !slot.ready || !slot.device) return;
-          const tNow = (typeof RNBO.TimeNow !== "undefined" && RNBO.TimeNow !== null) ? RNBO.TimeNow : 0;
-          if (RNBO.TempoEvent) slot.device.scheduleEvent(new RNBO.TempoEvent(tNow, 60));
-          if (RNBO.TransportEvent) {
-            slot.device.scheduleEvent(new RNBO.TransportEvent(tNow, 0));
-            slot.device.scheduleEvent(new RNBO.TransportEvent(tNow, 1));
-          }
-        });
-      });
-    }
+    if (typeof window.__lautirResumeAudio === "function") window.__lautirResumeAudio();
   },
 
   RNBO_Init: function(instanceIndex, patcherUrlPtr, depsUrlPtr) {
@@ -49,6 +27,40 @@ mergeInto(LibraryManager.library, {
       slot.initStarted = false;
     };
 
+    const restartAllTransports = function() {
+      const st = window.__lautirRnbo;
+      if (!st || !st.instances || typeof RNBO === "undefined") return;
+      Object.keys(st.instances).forEach(function(key) {
+        const s = st.instances[key];
+        if (!s || !s.ready || !s.device) return;
+        const tNow = (typeof RNBO.TimeNow !== "undefined" && RNBO.TimeNow !== null) ? RNBO.TimeNow : 0;
+        if (RNBO.TempoEvent) s.device.scheduleEvent(new RNBO.TempoEvent(tNow, 60));
+        if (RNBO.TransportEvent) {
+          s.device.scheduleEvent(new RNBO.TransportEvent(tNow, 0));
+          s.device.scheduleEvent(new RNBO.TransportEvent(tNow, 1));
+        }
+      });
+    };
+
+    if (!window.__lautirResumeAudio) {
+      window.__lautirAudioUnlocked = false;
+      window.__lautirResumeAudio = function() {
+        window.__lautirAudioUnlocked = true;
+        if (!window.__lautirRnbo) {
+          window.__lautirRnbo = { instances: {}, patcherCache: {}, depsCache: {}, audioContext: null };
+        }
+        const ctx = (typeof WEBAudio !== "undefined" && WEBAudio.audioContext)
+          ? WEBAudio.audioContext
+          : window.__lautirRnbo.audioContext;
+        if (!ctx) return;
+        if (ctx.state !== "running") {
+          ctx.resume().then(restartAllTransports);
+        } else {
+          restartAllTransports();
+        }
+      };
+    }
+
     const getAudioContext = function() {
       if (typeof WEBAudio !== "undefined" && WEBAudio.audioContext) return WEBAudio.audioContext;
       return st.audioContext;
@@ -64,14 +76,14 @@ mergeInto(LibraryManager.library, {
           st.audioContext = ctx;
         }
         if (ctx) {
-          if (ctx.state !== "running") {
+          if (ctx.state !== "running" && window.__lautirAudioUnlocked) {
             try { await ctx.resume(); } catch (e) {}
           }
           if (ctx.state === "running") return ctx;
         }
-        await new Promise(function(r) { setTimeout(r, 200); });
+        await new Promise(function(r) { setTimeout(r, 100); });
       }
-      throw new Error("AudioContext did not reach running state within 120s — click the page to start audio");
+      throw new Error("AudioContext did not reach running state — tap the page to start audio");
     };
 
     const startTransport = function(device) {

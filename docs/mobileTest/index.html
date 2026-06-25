@@ -184,6 +184,19 @@
       });
     })();
     var buildUrl = "Build";
+
+    // Mobile browsers require a user gesture to unlock AudioContext (same frame as touch).
+    function resumeWebAudio() {
+      if (typeof window.__lautirResumeAudio === "function") {
+        window.__lautirResumeAudio();
+      } else if (typeof WEBAudio !== "undefined" && WEBAudio.audioContext) {
+        WEBAudio.audioContext.resume();
+      }
+    }
+    ["touchstart", "pointerdown", "click"].forEach(function(evt) {
+      document.addEventListener(evt, resumeWebAudio, { passive: true, capture: true });
+    });
+
     var loaderUrl = buildUrl + "/mobileTest.loader.js";
     var script = document.createElement("script");
     script.src = loaderUrl;

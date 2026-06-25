@@ -230,6 +230,9 @@ public class WordInputManager : MonoBehaviour
             inputField.onFocusSelectAll = false;
             inputField.onValueChanged.AddListener(OnInputValueChanged);
             inputField.onSubmit.AddListener(_ => SubmitFromInput());
+            inputField.onSelect.AddListener(_ => RnboWebBridge.ResumeAudioOnUserGesture());
+            inputField.onEndEdit.AddListener(OnInputEndEdit);
+            inputField.onTouchScreenKeyboardStatusChanged.AddListener(OnMobileKeyboardStatusChanged);
         }
 
         RefreshWords();
@@ -250,7 +253,22 @@ public class WordInputManager : MonoBehaviour
         if (inputField == null || !inputField.gameObject.activeInHierarchy) return;
         if (_submitFrame == Time.frameCount) return;
         _submitFrame = Time.frameCount;
+        RnboWebBridge.ResumeAudioOnUserGesture();
         EnterWord();
+    }
+
+    void OnInputEndEdit(string value)
+    {
+        if (GameManager.S == null || !GameManager.S.IsGameAvailable || inputField == null) return;
+        var text = (value ?? inputField.text ?? "").Trim().ToUpperInvariant();
+        if (text.Length == MaxWordLength && CheckWord(text))
+            SubmitFromInput();
+    }
+
+    void OnMobileKeyboardStatusChanged(TouchScreenKeyboard.Status status)
+    {
+        if (status == TouchScreenKeyboard.Status.Done)
+            SubmitFromInput();
     }
 
     void OnInputValueChanged(string value)
@@ -430,6 +448,8 @@ public class WordInputManager : MonoBehaviour
 
     public void EnterWord()
     {
+        RnboWebBridge.ResumeAudioOnUserGesture();
+
         if (AllDaysUsed)
         {
             HideInputField();

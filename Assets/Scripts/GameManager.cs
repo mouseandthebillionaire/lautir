@@ -104,6 +104,12 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
+        if (Input.anyKeyDown || Input.GetMouseButtonDown(0)
+            || (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began))
+        {
+            RnboWebBridge.ResumeAudioOnUserGesture();
+        }
+
         switch (_phase)
         {
             case Phase.WaitingForWindow:
