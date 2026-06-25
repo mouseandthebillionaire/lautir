@@ -19,6 +19,7 @@
       width: 100%;
       height: 100%;
       background: #{{{ BACKGROUND_COLOR }}};
+      touch-action: manipulation;
     }
     #unity-loading-bar {
       position: absolute;
@@ -82,9 +83,26 @@
       background: rgba(255,255,255,0.15); color: #fff; font: 18px/1 sans-serif; cursor: pointer;
     }
     #info-close:hover { background: rgba(255,255,255,0.25); }
+
+    #audio-unlock-overlay {
+      position: fixed; inset: 0; z-index: 20000;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.6); color: #fff;
+      font: 17px/1.45 sans-serif; text-align: center;
+      padding: 28px; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #audio-unlock-overlay.hidden { display: none; }
+    #audio-unlock-overlay p { max-width: 280px; opacity: 0.9; margin-top: 8px; font-size: 14px; }
   </style>
 </head>
 <body>
+  <div id="audio-unlock-overlay" role="button" aria-label="Tap to enable sound">
+    <div>
+      <strong>Tap to enable sound</strong>
+      <p>Required on iPhone and iPad. Turn off silent mode if you hear nothing.</p>
+    </div>
+  </div>
   <button type="button" id="info-btn" aria-label="About">?</button>
   <div id="info-overlay" role="dialog" aria-label="About this project">
     <div id="info-modal">
@@ -185,14 +203,23 @@
     })();
     var buildUrl = "Build";
 
-    // Mobile browsers require a user gesture to unlock AudioContext (same frame as touch).
+    // Safari: resume AudioContext synchronously inside the touch handler (never await resume).
+    var audioOverlay = document.getElementById("audio-unlock-overlay");
     function resumeWebAudio() {
-      if (typeof window.__lautirResumeAudio === "function") {
-        window.__lautirResumeAudio();
-      } else if (typeof WEBAudio !== "undefined" && WEBAudio.audioContext) {
-        WEBAudio.audioContext.resume();
+      if (typeof window.__lautirUnlockAudioSync === "function") {
+        window.__lautirUnlockAudioSync();
+      } else {
+        window.__lautirAudioUnlocked = true;
+        var ctx = (typeof WEBAudio !== "undefined" && WEBAudio.audioContext) ? WEBAudio.audioContext : null;
+        if (ctx && ctx.state !== "running") {
+          try { ctx.resume(); } catch (e) { console.warn("[LAUTIR] resume:", e); }
+        }
+        console.log("[LAUTIR] early tap unlock | AudioContext=" + (ctx ? ctx.state : "pending"));
       }
+      if (audioOverlay) audioOverlay.classList.add("hidden");
     }
+    if (audioOverlay) audioOverlay.addEventListener("click", resumeWebAudio);
+    if (audioOverlay) audioOverlay.addEventListener("touchstart", function(e) { e.preventDefault(); resumeWebAudio(); }, { passive: false });
     ["touchstart", "pointerdown", "click"].forEach(function(evt) {
       document.addEventListener(evt, resumeWebAudio, { passive: true, capture: true });
     });
