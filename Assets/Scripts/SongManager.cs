@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 using System.Collections;
 using UnityEngine.Audio;
 
@@ -33,7 +34,7 @@ public class SongManager : MonoBehaviour
     public int layerPlayBars = 2;
     // Hold at full build before teardown — index = target stage (0 drone … 5 full song).
     public int[] holdBarsByTargetStage = { 0, 2, 4, 8, 12, 16 };
-    [Tooltip("If true, layers fade out in build order (chime first). If false, last layer in fades first.")]
+    [Tooltip("If true, layers fade out in build order (chime first). If false, last layer in fades first. WebGL: override with ?fadeOutInBuildOrder=1 or ?teardown=build|reverse.")]
     public bool fadeOutInBuildOrder = false;
     // Mixer exposed parameter (in dB) used to fade the whole mix out.
     public string masterVolumeParameterName = "MasterVolume";
@@ -49,6 +50,7 @@ public class SongManager : MonoBehaviour
     void Awake()
     {
         S = this;
+        ApplyFadeOutOrderFromUrl();
 
         if (instrumentScripts == null || instrumentScripts.Length == 0)
             instrumentScripts = GetComponentsInChildren<InstrumentScript>(true);
@@ -393,6 +395,128 @@ public class SongManager : MonoBehaviour
 
         Debug.Log("Triggering Melody " + melodyNum + " with word " + word);
         instrumentScripts[melodyNum].ParseWord(word);
+    }
+
+    void ApplyFadeOutOrderFromUrl()
+    {
+        if (TryGetQueryBool("fadeOutInBuildOrder", out bool fromUrl))
+        {
+            fadeOutInBuildOrder = fromUrl;
+            Debug.Log($"[LAUTIR] fadeOutInBuildOrder from URL: {fadeOutInBuildOrder}");
+            return;
+        }
+
+        if (TryGetQueryString("teardown", out string teardown)
+            && TryParseTeardownMode(teardown, out bool buildOrder))
+        {
+            fadeOutInBuildOrder = buildOrder;
+            Debug.Log($"[LAUTIR] teardown={teardown} → fadeOutInBuildOrder={fadeOutInBuildOrder}");
+        }
+    }
+
+    static bool TryGetQueryString(string key, out string value)
+    {
+        value = null;
+        if (!TryFindQueryPair(key, out string rawValue))
+            return false;
+        value = rawValue;
+        return true;
+    }
+
+    static bool TryGetQueryBool(string key, out bool value)
+    {
+        value = false;
+        if (!TryFindQueryPair(key, out string rawValue))
+            return false;
+        return TryParseBoolish(rawValue, out value);
+    }
+
+    static bool TryFindQueryPair(string key, out string value)
+    {
+        value = null;
+        string url = Application.absoluteURL;
+        if (string.IsNullOrEmpty(url))
+            return false;
+
+        int queryStart = url.IndexOf('?');
+        if (queryStart < 0)
+            return false;
+
+        string query = url.Substring(queryStart + 1);
+        int hash = query.IndexOf('#');
+        if (hash >= 0)
+            query = query.Substring(0, hash);
+
+        foreach (string part in query.Split('&'))
+        {
+            if (string.IsNullOrEmpty(part))
+                continue;
+
+            int eq = part.IndexOf('=');
+            string partKey = eq >= 0 ? part.Substring(0, eq) : part;
+            if (!string.Equals(Uri.UnescapeDataString(partKey), key, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            value = eq >= 0 ? Uri.UnescapeDataString(part.Substring(eq + 1)) : "true";
+            return true;
+        }
+
+        return false;
+    }
+
+    static bool TryParseBoolish(string raw, out bool value)
+    {
+        value = false;
+        if (string.IsNullOrWhiteSpace(raw))
+            return false;
+
+        switch (raw.Trim().ToLowerInvariant())
+        {
+            case "1":
+            case "true":
+            case "on":
+            case "yes":
+                value = true;
+                return true;
+            case "0":
+            case "false":
+            case "off":
+            case "no":
+                value = false;
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    static bool TryParseTeardownMode(string raw, out bool fadeOutInBuildOrder)
+    {
+        fadeOutInBuildOrder = false;
+        if (string.IsNullOrWhiteSpace(raw))
+            return false;
+
+        switch (raw.Trim().ToLowerInvariant())
+        {
+            case "build":
+            case "fifo":
+            case "first":
+            case "1":
+            case "true":
+            case "on":
+                fadeOutInBuildOrder = true;
+                return true;
+            case "reverse":
+            case "lifo":
+            case "last":
+            case "original":
+            case "0":
+            case "false":
+            case "off":
+                fadeOutInBuildOrder = false;
+                return true;
+            default:
+                return false;
+        }
     }
 
 }

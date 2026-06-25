@@ -19,28 +19,88 @@
       width: 100%;
       height: 100%;
       background: ##1F1F20;
+      touch-action: manipulation;
     }
-    #unity-loading-bar {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      display: none;
+    #lautir-loading-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 9000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: ##1F1F20;
+      transition: opacity 0.55s ease, visibility 0.55s ease;
+    }
+    #lautir-loading-screen.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .lautir-loader {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      padding: 24px;
+      text-align: center;
+    }
+    .lautir-loader-ring {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.12);
+      border-top-color: rgba(255,255,255,0.75);
+      animation: lautir-spin 1.1s linear infinite;
+    }
+    .lautir-loader-dots {
+      display: flex;
+      gap: 7px;
+      height: 10px;
+      align-items: center;
+    }
+    .lautir-loader-dots span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.35);
+      animation: lautir-pulse 1.4s ease-in-out infinite;
+    }
+    .lautir-loader-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .lautir-loader-dots span:nth-child(3) { animation-delay: 0.4s; }
+    #lautir-loading-status {
+      color: rgba(255,255,255,0.82);
+      font: 15px/1.4 sans-serif;
+      letter-spacing: 0.02em;
+      min-height: 1.4em;
     }
     #unity-progress-bar-empty {
-      width: 200px;
-      height: 8px;
-      margin-top: 10px;
-      background: rgba(255,255,255,0.2);
-      border-radius: 4px;
+      width: min(240px, 70vw);
+      height: 4px;
+      background: rgba(255,255,255,0.14);
+      border-radius: 999px;
       overflow: hidden;
+    }
+    #unity-progress-bar-empty.indeterminate #unity-progress-bar-full {
+      width: 35%;
+      animation: lautir-shimmer 1.2s ease-in-out infinite;
     }
     #unity-progress-bar-full {
       width: 0%;
       height: 100%;
-      background: rgba(255,255,255,0.8);
-      border-radius: 4px;
-      transition: width 0.1s;
+      background: rgba(255,255,255,0.72);
+      border-radius: 999px;
+      transition: width 0.12s ease-out;
+    }
+    @keyframes lautir-spin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes lautir-pulse {
+      0%, 80%, 100% { opacity: 0.25; transform: scale(0.85); }
+      40% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes lautir-shimmer {
+      0% { transform: translateX(-120%); }
+      100% { transform: translateX(340%); }
     }
     #unity-footer { position: absolute; bottom: 10px; width: 100%; text-align: center; }
 
@@ -82,9 +142,53 @@
       background: rgba(255,255,255,0.15); color: #fff; font: 18px/1 sans-serif; cursor: pointer;
     }
     #info-close:hover { background: rgba(255,255,255,0.25); }
+
+    #audio-unlock-overlay {
+      position: fixed; inset: 0; z-index: 20000;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.6); color: #fff;
+      font: 17px/1.45 sans-serif; text-align: center;
+      padding: 28px; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #audio-unlock-overlay.hidden { display: none; }
+    #audio-unlock-overlay p { max-width: 280px; opacity: 0.9; margin-top: 8px; font-size: 14px; }
+    #audio-unlock-loading {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      opacity: 0.65;
+      font-size: 13px;
+    }
+    #audio-unlock-loading .lautir-loader-dots span {
+      width: 6px;
+      height: 6px;
+    }
   </style>
 </head>
 <body>
+  <div id="lautir-loading-screen" aria-live="polite" aria-busy="true">
+    <div class="lautir-loader">
+      <div class="lautir-loader-ring" aria-hidden="true"></div>
+      <div class="lautir-loader-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+      <p id="lautir-loading-status">Preparing…</p>
+      <div id="unity-progress-bar-empty" class="indeterminate">
+        <div id="unity-progress-bar-full"></div>
+      </div>
+    </div>
+  </div>
+  <div id="audio-unlock-overlay" role="button" aria-label="Tap to enable sound">
+    <div>
+      <strong>Tap to enable sound</strong>
+      <p>Required on iPhone and iPad. Turn off silent mode if you hear nothing.</p>
+      <div id="audio-unlock-loading" aria-hidden="true">
+        <div class="lautir-loader-dots"><span></span><span></span><span></span></div>
+        <span id="audio-unlock-loading-text">Loading…</span>
+      </div>
+    </div>
+  </div>
   <button type="button" id="info-btn" aria-label="About">?</button>
   <div id="info-overlay" role="dialog" aria-label="About this project">
     <div id="info-modal">
@@ -100,11 +204,6 @@
   </div>
   <div id="unity-container">
     <canvas id="unity-canvas"></canvas>
-    <div id="unity-loading-bar">
-      <div id="unity-progress-bar-empty">
-        <div id="unity-progress-bar-full"></div>
-      </div>
-    </div>
   </div>
   <div id="unity-footer">
   </div>
@@ -184,10 +283,80 @@
       });
     })();
     var buildUrl = "Build";
+
+    // Teardown order: ?fadeOutInBuildOrder=1 (build/fifo) or =0 (reverse/original).
+    // Shorthand: ?teardown=build | ?teardown=reverse
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var fade = params.get("fadeOutInBuildOrder");
+      var teardown = params.get("teardown");
+      if (fade != null || teardown != null) {
+        console.log("[LAUTIR] URL teardown flags | fadeOutInBuildOrder=" + fade + " teardown=" + teardown);
+      }
+    })();
+
+    // Safari: resume AudioContext synchronously inside the touch handler (never await resume).
+    var audioOverlay = document.getElementById("audio-unlock-overlay");
+    function resumeWebAudio() {
+      if (typeof window.__lautirUnlockAudioSync === "function") {
+        window.__lautirUnlockAudioSync();
+      } else {
+        window.__lautirAudioUnlocked = true;
+        var ctx = (typeof WEBAudio !== "undefined" && WEBAudio.audioContext) ? WEBAudio.audioContext : null;
+        if (ctx && ctx.state !== "running") {
+          try { ctx.resume(); } catch (e) { console.warn("[LAUTIR] resume:", e); }
+        }
+        console.log("[LAUTIR] early tap unlock | AudioContext=" + (ctx ? ctx.state : "pending"));
+      }
+      if (audioOverlay) audioOverlay.classList.add("hidden");
+    }
+    if (audioOverlay) audioOverlay.addEventListener("click", resumeWebAudio);
+    if (audioOverlay) audioOverlay.addEventListener("touchstart", function(e) { e.preventDefault(); resumeWebAudio(); }, { passive: false });
+    ["touchstart", "pointerdown", "click"].forEach(function(evt) {
+      document.addEventListener(evt, resumeWebAudio, { passive: true, capture: true });
+    });
+
+    var loadingScreen = document.getElementById("lautir-loading-screen");
+    var loadingStatus = document.getElementById("lautir-loading-status");
+    var audioUnlockLoadingText = document.getElementById("audio-unlock-loading-text");
+    var progressBarEmpty = document.getElementById("unity-progress-bar-empty");
+    var progressBarFull = document.getElementById("unity-progress-bar-full");
+    var unityProgressKnown = false;
+
+    function setLoadingStatus(message) {
+      if (loadingStatus) loadingStatus.textContent = message;
+      if (audioUnlockLoadingText) audioUnlockLoadingText.textContent = message;
+    }
+
+    function setLoadingProgress(progress) {
+      if (!progressBarEmpty || !progressBarFull) return;
+      if (!unityProgressKnown) {
+        unityProgressKnown = true;
+        progressBarEmpty.classList.remove("indeterminate");
+        progressBarFull.style.transform = "";
+      }
+      var pct = Math.max(0, Math.min(100, Math.round(progress * 100)));
+      progressBarFull.style.width = pct + "%";
+      setLoadingStatus("Loading… " + pct + "%");
+    }
+
+    function hideLoadingScreen() {
+      if (loadingScreen) {
+        loadingScreen.classList.add("hidden");
+        loadingScreen.setAttribute("aria-busy", "false");
+      }
+    }
+
+    setLoadingStatus("Preparing…");
+
     var loaderUrl = buildUrl + "/0.4.loader.js";
     var script = document.createElement("script");
     script.src = loaderUrl;
+    script.onerror = function () {
+      setLoadingStatus("Could not load. Please refresh.");
+    };
     script.onload = function () {
+      setLoadingStatus("Starting…");
       createUnityInstance(document.querySelector("#unity-canvas"), {
         dataUrl: buildUrl + "/0.4.data",
         frameworkUrl: buildUrl + "/0.4.framework.js",
@@ -197,14 +366,16 @@
         //productName: "LAUTIR",
         //productVersion: "1.0",
       }, function (progress) {
-        var progressBarFull = document.querySelector("#unity-progress-bar-full");
-        progressBarFull.style.width = 100 * progress + "%";
+        setLoadingProgress(progress);
       }).then(function (unityInstance) {
-        document.querySelector("#unity-loading-bar").style.display = "none";
+        setLoadingStatus("Ready");
+        hideLoadingScreen();
       }).catch(function (message) {
+        setLoadingStatus("Load failed. Please refresh.");
         alert(message);
       });
     };
+    setLoadingStatus("Loading engine…");
     document.body.appendChild(script);
   </script>
 </body>
