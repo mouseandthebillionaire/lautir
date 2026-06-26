@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>LAUTIR</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+    #unity-container {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      left: 0;
+      top: 0;
+      background: ##1F1F20;
+    }
+    #unity-canvas {
+      width: 100%;
+      height: 100%;
+      background: ##1F1F20;
+      touch-action: manipulation;
+    }
+    #lautir-loading-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 9000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: ##1F1F20;
+      transition: opacity 0.55s ease, visibility 0.55s ease;
+    }
+    #lautir-loading-screen.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .lautir-loader {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      padding: 24px;
+      text-align: center;
+    }
+    .lautir-loader-ring {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.12);
+      border-top-color: rgba(255,255,255,0.75);
+      animation: lautir-spin 1.1s linear infinite;
+    }
+    .lautir-loader-dots {
+      display: flex;
+      gap: 7px;
+      height: 10px;
+      align-items: center;
+    }
+    .lautir-loader-dots span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.35);
+      animation: lautir-pulse 1.4s ease-in-out infinite;
+    }
+    .lautir-loader-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .lautir-loader-dots span:nth-child(3) { animation-delay: 0.4s; }
+    #lautir-loading-status {
+      color: rgba(255,255,255,0.82);
+      font: 15px/1.4 sans-serif;
+      letter-spacing: 0.02em;
+      min-height: 1.4em;
+    }
+    #unity-progress-bar-empty {
+      width: min(240px, 70vw);
+      height: 4px;
+      background: rgba(255,255,255,0.14);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    #unity-progress-bar-empty.indeterminate #unity-progress-bar-full {
+      width: 35%;
+      animation: lautir-shimmer 1.2s ease-in-out infinite;
+    }
+    #unity-progress-bar-full {
+      width: 0%;
+      height: 100%;
+      background: rgba(255,255,255,0.72);
+      border-radius: 999px;
+      transition: width 0.12s ease-out;
+    }
+    @keyframes lautir-spin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes lautir-pulse {
+      0%, 80%, 100% { opacity: 0.25; transform: scale(0.85); }
+      40% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes lautir-shimmer {
+      0% { transform: translateX(-120%); }
+      100% { transform: translateX(340%); }
+    }
+    #unity-footer { position: absolute; bottom: 10px; width: 100%; text-align: center; }
+
+    #info-btn {
+      position: fixed; top: 12px; right: 12px; z-index: 10001;
+      width: 32px; height: 32px; border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.5); background: rgba(0,0,0,0.3);
+      color: #fff; font: 18px/1 sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+    #info-btn:hover { background: rgba(0,0,0,0.5); }
+
+    #info-overlay {
+      display: none; position: fixed; inset: 0; z-index: 10000;
+      background: rgba(0,0,0,0.5); align-items: center; justify-content: center;
+    }
+    #info-overlay.show { display: flex; }
+    #info-modal {
+      background: #1a1a1a; color: #eee; max-width: 420px; max-height: 80vh; overflow: auto;
+      padding: 20px; border-radius: 8px; position: relative; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+    #info-modal h2 { font: 16px/1.3 sans-serif; margin-bottom: 12px; }
+    #info-modal p { font: 14px/1.5 sans-serif; margin-bottom: 10px; color: #ccc; }
+    #calendar-btn {
+      margin-top: 8px;
+      display: inline-block;
+      padding: 10px 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      font: 14px/1 sans-serif;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    #calendar-btn:hover { background: rgba(255,255,255,0.18); }
+    #info-close {
+      position: absolute; top: 10px; right: 10px;
+      width: 28px; height: 28px; border: none; border-radius: 4px;
+      background: rgba(255,255,255,0.15); color: #fff; font: 18px/1 sans-serif; cursor: pointer;
+    }
+    #info-close:hover { background: rgba(255,255,255,0.25); }
+  </style>
+</head>
+<body>
+  <div id="lautir-loading-screen" aria-live="polite" aria-busy="true">
+    <div class="lautir-loader">
+      <div class="lautir-loader-ring" aria-hidden="true"></div>
+      <div class="lautir-loader-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+      <p id="lautir-loading-status">Preparing…</p>
+      <div id="unity-progress-bar-empty" class="indeterminate">
+        <div id="unity-progress-bar-full"></div>
+      </div>
+    </div>
+  </div>
+  <button type="button" id="info-btn" aria-label="About">?</button>
+  <div id="info-overlay" role="dialog" aria-label="About this project">
+    <div id="info-modal">
+      <button type="button" id="info-close" aria-label="Close">&times;</button>
+      <p>LAUTIR is a daily experience that explores time, presence, and ritual.</p>
+      <p>Enter one five-letter word between 12 and 12:10pm each day and be presented with a unique piece of music.</p>
+      <p>The sonic parameters are informed by the letter choices you have made.</p>
+      <p>Each day builds on the last.</p>
+      <p>The song builds itself up, plays for 16 bars, and then removes word-instruments as it returns to its oroginal state, giving you time to reflect.</p>
+      <p>Come every day for five days to experience a full song composed of your words.</p>
+      <button type="button" id="calendar-btn">Add daily noon reminder (5 days)</button>
+    </div>
+  </div>
+  <div id="unity-container">
+    <canvas id="unity-canvas"></canvas>
+  </div>
+  <div id="unity-footer">
+  </div>
+  <script>
+    (function() {
+      var btn = document.getElementById("info-btn");
+      var overlay = document.getElementById("info-overlay");
+      var closeBtn = document.getElementById("info-close");
+      if (btn) btn.addEventListener("click", function() { overlay.classList.add("show"); });
+      if (closeBtn) closeBtn.addEventListener("click", function() { overlay.classList.remove("show"); });
+      if (overlay) overlay.addEventListener("click", function(e) { if (e.target === overlay) overlay.classList.remove("show"); });
+
+      // Calendar reminder download (client-side .ics)
+      var calendarBtn = document.getElementById("calendar-btn");
+      var GAME_URL = "https://mouseandthebillionaire.github.io/lautir/0.2/";
+      var START_HOUR = 12;         // noon
+      var START_MINUTE = 0;
+      var DURATION_MINUTES = 10;   // change if your window changes
+      var DAYS_COUNT = 5;          // total occurrences
+
+      function pad2(n) { return n < 10 ? ("0" + n) : ("" + n); }
+      function formatLocal(dt) {
+        return "" + dt.getFullYear() + pad2(dt.getMonth() + 1) + pad2(dt.getDate()) +
+          "T" + pad2(dt.getHours()) + pad2(dt.getMinutes()) + pad2(dt.getSeconds());
+      }
+      function formatUtc(dt) {
+        return "" + dt.getUTCFullYear() + pad2(dt.getUTCMonth() + 1) + pad2(dt.getUTCDate()) +
+          "T" + pad2(dt.getUTCHours()) + pad2(dt.getUTCMinutes()) + pad2(dt.getUTCSeconds()) + "Z";
+      }
+      function escapeIcsText(s) {
+        return (s || "").replace(/\\\\/g, "\\\\\\\\").replace(/;/g, "\\\\;").replace(/,/g, "\\\\,");
+      }
+      function buildIcs(startLocal, endLocal) {
+        var uid = "lautir-" + Math.random().toString(16).slice(2) + "-" + Date.now() + "@lautir";
+        var dtstamp = formatUtc(new Date());
+        var lines = [
+          "BEGIN:VCALENDAR",
+          "VERSION:2.0",
+          "PRODID:-//LAUTIR//Reminder//EN",
+          "BEGIN:VEVENT",
+          "UID:" + uid,
+          "DTSTAMP:" + dtstamp,
+          "DTSTART:" + formatLocal(startLocal),
+          "DTEND:" + formatLocal(endLocal),
+          "RRULE:FREQ=DAILY;COUNT=" + DAYS_COUNT,
+          "SUMMARY:LAUTIR",
+          "DESCRIPTION:" + escapeIcsText("LAUTIR - " + GAME_URL),
+          "URL:" + GAME_URL,
+          "END:VEVENT",
+          "END:VCALENDAR"
+        ];
+        return lines.join("\r\n") + "\r\n";
+      }
+      function downloadText(filename, content) {
+        var blob = new Blob([content], { type: "text/calendar;charset=utf-8" });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+      function nextNoon() {
+        var now = new Date();
+        var start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), START_HOUR, START_MINUTE, 0);
+        if (now > start) start.setDate(start.getDate() + 1);
+        return start;
+      }
+
+      if (calendarBtn) calendarBtn.addEventListener("click", function() {
+        var start = nextNoon();
+        var end = new Date(start.getTime() + DURATION_MINUTES * 60 * 1000);
+        var ics = buildIcs(start, end);
+        downloadText("lautir-reminder.ics", ics);
+      });
+    })();
+    var buildUrl = "Build";
+
+    // Teardown order: ?fadeOutInBuildOrder=1 (build/fifo) or =0 (reverse/original).
+    // Shorthand: ?teardown=build | ?teardown=reverse
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var fade = params.get("fadeOutInBuildOrder");
+      var teardown = params.get("teardown");
+      if (fade != null || teardown != null) {
+        console.log("[LAUTIR] URL teardown flags | fadeOutInBuildOrder=" + fade + " teardown=" + teardown);
+      }
+    })();
+
+    var loadingScreen = document.getElementById("lautir-loading-screen");
+    var loadingStatus = document.getElementById("lautir-loading-status");
+    var progressBarEmpty = document.getElementById("unity-progress-bar-empty");
+    var progressBarFull = document.getElementById("unity-progress-bar-full");
+    var unityProgressKnown = false;
+
+    function setLoadingStatus(message) {
+      if (loadingStatus) loadingStatus.textContent = message;
+    }
+
+    function setLoadingProgress(progress) {
+      if (!progressBarEmpty || !progressBarFull) return;
+      if (!unityProgressKnown) {
+        unityProgressKnown = true;
+        progressBarEmpty.classList.remove("indeterminate");
+        progressBarFull.style.transform = "";
+      }
+      var pct = Math.max(0, Math.min(100, Math.round(progress * 100)));
+      progressBarFull.style.width = pct + "%";
+      setLoadingStatus("Loading… " + pct + "%");
+    }
+
+    function hideLoadingScreen() {
+      if (loadingScreen) {
+        loadingScreen.classList.add("hidden");
+        loadingScreen.setAttribute("aria-busy", "false");
+      }
+    }
+
+    setLoadingStatus("Preparing…");
+
+    var loaderUrl = buildUrl + "/1.0.loader.js";
+    var script = document.createElement("script");
+    script.src = loaderUrl;
+    script.onerror = function () {
+      setLoadingStatus("Could not load. Please refresh.");
+    };
+    script.onload = function () {
+      setLoadingStatus("Starting…");
+      createUnityInstance(document.querySelector("#unity-canvas"), {
+        dataUrl: buildUrl + "/1.0.data",
+        frameworkUrl: buildUrl + "/1.0.framework.js",
+        codeUrl: buildUrl + "/1.0.wasm",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "Mouse _ the Billionaire",
+        //productName: "LAUTIR",
+        //productVersion: "1.0",
+      }, function (progress) {
+        setLoadingProgress(progress);
+      }).then(function (unityInstance) {
+        setLoadingStatus("Ready");
+        hideLoadingScreen();
+      }).catch(function (message) {
+        setLoadingStatus("Load failed. Please refresh.");
+        alert(message);
+      });
+    };
+    setLoadingStatus("Loading engine…");
+    document.body.appendChild(script);
+  </script>
+</body>
+</html>

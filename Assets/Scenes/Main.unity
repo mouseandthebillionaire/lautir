@@ -3651,7 +3651,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   wipeExistingWords: 0
-  testing: 1
+  testing: 0
   currentDay: 0
   informationText: {fileID: 0}
   fader: {fileID: 582086080}
@@ -3660,14 +3660,14 @@ MonoBehaviour:
   availableMinute: 0
   availableDuration: 10
   waitTime: 0
-  waitMin: 0
-  waitMax: 2
+  waitMin: 30
+  waitMax: 120
   waitTimeRemaining: 0
   eventMinutes: 2
   preAlignmentBlend: 0.4
   awayRampMinutes: 720
   awayCurvePower: 0.5
-  enforceTimeWindow: 0
+  enforceTimeWindow: 1
 --- !u!114 &1535637606
 MonoBehaviour:
   m_ObjectHideFlags: 0

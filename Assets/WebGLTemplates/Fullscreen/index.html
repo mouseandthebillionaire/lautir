@@ -142,30 +142,6 @@
       background: rgba(255,255,255,0.15); color: #fff; font: 18px/1 sans-serif; cursor: pointer;
     }
     #info-close:hover { background: rgba(255,255,255,0.25); }
-
-    #audio-unlock-overlay {
-      position: fixed; inset: 0; z-index: 20000;
-      display: flex; align-items: center; justify-content: center;
-      background: rgba(0,0,0,0.6); color: #fff;
-      font: 17px/1.45 sans-serif; text-align: center;
-      padding: 28px; cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-    }
-    #audio-unlock-overlay.hidden { display: none; }
-    #audio-unlock-overlay p { max-width: 280px; opacity: 0.9; margin-top: 8px; font-size: 14px; }
-    #audio-unlock-loading {
-      margin-top: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      opacity: 0.65;
-      font-size: 13px;
-    }
-    #audio-unlock-loading .lautir-loader-dots span {
-      width: 6px;
-      height: 6px;
-    }
   </style>
 </head>
 <body>
@@ -176,16 +152,6 @@
       <p id="lautir-loading-status">Preparing…</p>
       <div id="unity-progress-bar-empty" class="indeterminate">
         <div id="unity-progress-bar-full"></div>
-      </div>
-    </div>
-  </div>
-  <div id="audio-unlock-overlay" role="button" aria-label="Tap to enable sound">
-    <div>
-      <strong>Tap to enable sound</strong>
-      <p>Required on iPhone and iPad. Turn off silent mode if you hear nothing.</p>
-      <div id="audio-unlock-loading" aria-hidden="true">
-        <div class="lautir-loader-dots"><span></span><span></span><span></span></div>
-        <span id="audio-unlock-loading-text">Loading…</span>
       </div>
     </div>
   </div>
@@ -295,37 +261,14 @@
       }
     })();
 
-    // Safari: resume AudioContext synchronously inside the touch handler (never await resume).
-    var audioOverlay = document.getElementById("audio-unlock-overlay");
-    function resumeWebAudio() {
-      if (typeof window.__lautirUnlockAudioSync === "function") {
-        window.__lautirUnlockAudioSync();
-      } else {
-        window.__lautirAudioUnlocked = true;
-        var ctx = (typeof WEBAudio !== "undefined" && WEBAudio.audioContext) ? WEBAudio.audioContext : null;
-        if (ctx && ctx.state !== "running") {
-          try { ctx.resume(); } catch (e) { console.warn("[LAUTIR] resume:", e); }
-        }
-        console.log("[LAUTIR] early tap unlock | AudioContext=" + (ctx ? ctx.state : "pending"));
-      }
-      if (audioOverlay) audioOverlay.classList.add("hidden");
-    }
-    if (audioOverlay) audioOverlay.addEventListener("click", resumeWebAudio);
-    if (audioOverlay) audioOverlay.addEventListener("touchstart", function(e) { e.preventDefault(); resumeWebAudio(); }, { passive: false });
-    ["touchstart", "pointerdown", "click"].forEach(function(evt) {
-      document.addEventListener(evt, resumeWebAudio, { passive: true, capture: true });
-    });
-
     var loadingScreen = document.getElementById("lautir-loading-screen");
     var loadingStatus = document.getElementById("lautir-loading-status");
-    var audioUnlockLoadingText = document.getElementById("audio-unlock-loading-text");
     var progressBarEmpty = document.getElementById("unity-progress-bar-empty");
     var progressBarFull = document.getElementById("unity-progress-bar-full");
     var unityProgressKnown = false;
 
     function setLoadingStatus(message) {
       if (loadingStatus) loadingStatus.textContent = message;
-      if (audioUnlockLoadingText) audioUnlockLoadingText.textContent = message;
     }
 
     function setLoadingProgress(progress) {
