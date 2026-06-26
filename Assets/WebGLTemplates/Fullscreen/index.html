@@ -4,31 +4,36 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <title>{{{ PRODUCT_NAME }}}</title>
+  <style>html,body{background:{{{ BACKGROUND_COLOR }}}}</style>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: {{{ BACKGROUND_COLOR }}}; }
     #unity-container {
       position: absolute;
       width: 100%;
       height: 100%;
       left: 0;
       top: 0;
-      background: #{{{ BACKGROUND_COLOR }}};
+      background: {{{ BACKGROUND_COLOR }}};
+      visibility: hidden;
+    }
+    #unity-container.ready {
+      visibility: visible;
     }
     #unity-canvas {
       width: 100%;
       height: 100%;
-      background: #{{{ BACKGROUND_COLOR }}};
+      background: {{{ BACKGROUND_COLOR }}};
       touch-action: manipulation;
     }
     #lautir-loading-screen {
       position: fixed;
       inset: 0;
-      z-index: 9000;
+      z-index: 2147483646;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #{{{ BACKGROUND_COLOR }}};
+      background: {{{ BACKGROUND_COLOR }}};
       transition: opacity 0.55s ease, visibility 0.55s ease;
     }
     #lautir-loading-screen.hidden {
@@ -145,7 +150,7 @@
   </style>
 </head>
 <body>
-  <div id="lautir-loading-screen" aria-live="polite" aria-busy="true">
+  <div id="lautir-loading-screen" style="background:{{{ BACKGROUND_COLOR }}}" aria-live="polite" aria-busy="true">
     <div class="lautir-loader">
       <div class="lautir-loader-ring" aria-hidden="true"></div>
       <div class="lautir-loader-dots" aria-hidden="true"><span></span><span></span><span></span></div>
@@ -263,9 +268,15 @@
 
     var loadingScreen = document.getElementById("lautir-loading-screen");
     var loadingStatus = document.getElementById("lautir-loading-status");
+    var unityContainer = document.getElementById("unity-container");
     var progressBarEmpty = document.getElementById("unity-progress-bar-empty");
     var progressBarFull = document.getElementById("unity-progress-bar-full");
     var unityProgressKnown = false;
+
+    // Keep loader above the canvas from the first script tick.
+    document.documentElement.style.background = "{{{ BACKGROUND_COLOR }}}";
+    document.body.style.background = "{{{ BACKGROUND_COLOR }}}";
+    if (loadingScreen) loadingScreen.style.display = "flex";
 
     function setLoadingStatus(message) {
       if (loadingStatus) loadingStatus.textContent = message;
@@ -284,10 +295,20 @@
     }
 
     function hideLoadingScreen() {
-      if (loadingScreen) {
-        loadingScreen.classList.add("hidden");
-        loadingScreen.setAttribute("aria-busy", "false");
-      }
+      if (!loadingScreen) return;
+      loadingScreen.classList.add("hidden");
+      loadingScreen.setAttribute("aria-busy", "false");
+    }
+
+    function revealUnity() {
+      if (unityContainer) unityContainer.classList.add("ready");
+      hideLoadingScreen();
+    }
+
+    function waitForUnityPaint(callback) {
+      requestAnimationFrame(function () {
+        requestAnimationFrame(callback);
+      });
     }
 
     setLoadingStatus("Preparing…");
@@ -318,7 +339,7 @@
         setLoadingProgress(progress);
       }).then(function (unityInstance) {
         setLoadingStatus("Ready");
-        hideLoadingScreen();
+        waitForUnityPaint(revealUnity);
       }).catch(function (message) {
         setLoadingStatus("Load failed. Please refresh.");
         alert(message);
