@@ -32,10 +32,9 @@ mergeInto(LibraryManager.library, {
 
     window.__lautirUnlockAudioSync = function() {
       window.__lautirAudioUnlocked = true;
-      let ctx = window.__lautirGetAudioContext();
-      // Unity may not have created WEBAudio yet — make a fallback so RNBO can start.
+      var ctx = window.__lautirGetAudioContext();
       if (!ctx) {
-        const WAContext = window.AudioContext || window.webkitAudioContext;
+        var WAContext = window.AudioContext || window.webkitAudioContext;
         if (WAContext) {
           try {
             ctx = new WAContext();
@@ -45,26 +44,21 @@ mergeInto(LibraryManager.library, {
           }
         }
       }
-      const finish = function() {
-        console.log("[LAUTIR] audio unlock | AudioContext=" + (ctx ? ctx.state : "not ready yet"));
+      if (ctx && ctx.state !== "running") {
+        try { ctx.resume(); } catch (e) { console.warn("[LAUTIR] ctx.resume failed:", e); }
+      }
+      console.log("[LAUTIR] audio unlock | AudioContext=" + (ctx ? ctx.state : "not ready yet"));
+      window.__lautirFlushPendingRnboInits();
+      window.__lautirRestartAllTransports();
+      // resume() is async — retry flush shortly after unlock
+      setTimeout(function() {
         window.__lautirFlushPendingRnboInits();
         window.__lautirRestartAllTransports();
-      };
-      if (ctx && ctx.state !== "running") {
-        try {
-          const p = ctx.resume();
-          if (p && typeof p.then === "function") {
-            p.then(finish).catch(function(e) {
-              console.warn("[LAUTIR] ctx.resume failed:", e);
-              finish();
-            });
-            return;
-          }
-        } catch (e) {
-          console.warn("[LAUTIR] ctx.resume failed:", e);
-        }
-      }
-      finish();
+      }, 50);
+      setTimeout(function() {
+        window.__lautirFlushPendingRnboInits();
+        window.__lautirRestartAllTransports();
+      }, 250);
     };
 
     window.__lautirStartRnboInit = function(key) {

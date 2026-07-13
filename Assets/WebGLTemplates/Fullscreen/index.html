@@ -280,8 +280,8 @@
         console.log("[LAUTIR] early tap unlock | AudioContext=" + (ctx ? ctx.state : "pending"));
       }
     }
-    ["touchstart", "pointerdown", "click"].forEach(function(evt) {
-      document.addEventListener(evt, resumeWebAudio, { passive: true, capture: true });
+    ;["touchstart", "pointerdown", "click"].forEach(function(evt) {
+      document.addEventListener(evt, resumeWebAudio, true);
     });
 
     var loadingScreen = document.getElementById("lautir-loading-screen");
