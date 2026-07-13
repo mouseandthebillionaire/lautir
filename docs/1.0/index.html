@@ -4,31 +4,36 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <title>LAUTIR</title>
+  <style>html,body{background:#1F1F20}</style>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #1F1F20; }
     #unity-container {
       position: absolute;
       width: 100%;
       height: 100%;
       left: 0;
       top: 0;
-      background: ##1F1F20;
+      background: #1F1F20;
+      visibility: hidden;
+    }
+    #unity-container.ready {
+      visibility: visible;
     }
     #unity-canvas {
       width: 100%;
       height: 100%;
-      background: ##1F1F20;
+      background: #1F1F20;
       touch-action: manipulation;
     }
     #lautir-loading-screen {
       position: fixed;
       inset: 0;
-      z-index: 9000;
+      z-index: 2147483646;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: ##1F1F20;
+      background: #1F1F20;
       transition: opacity 0.55s ease, visibility 0.55s ease;
     }
     #lautir-loading-screen.hidden {
@@ -145,7 +150,7 @@
   </style>
 </head>
 <body>
-  <div id="lautir-loading-screen" aria-live="polite" aria-busy="true">
+  <div id="lautir-loading-screen" style="background:#1F1F20" aria-live="polite" aria-busy="true">
     <div class="lautir-loader">
       <div class="lautir-loader-ring" aria-hidden="true"></div>
       <div class="lautir-loader-dots" aria-hidden="true"><span></span><span></span><span></span></div>
@@ -163,7 +168,7 @@
       <p>Enter one five-letter word between 12 and 12:10pm each day and be presented with a unique piece of music.</p>
       <p>The sonic parameters are informed by the letter choices you have made.</p>
       <p>Each day builds on the last.</p>
-      <p>The song builds itself up, plays for 16 bars, and then removes word-instruments as it returns to its oroginal state, giving you time to reflect.</p>
+      <p>The song builds itself up, plays for 16 bars, and then removes word-instruments as it returns to its oroginal state.</p>
       <p>Come every day for five days to experience a full song composed of your words.</p>
       <button type="button" id="calendar-btn">Add daily noon reminder (5 days)</button>
     </div>
@@ -184,7 +189,7 @@
 
       // Calendar reminder download (client-side .ics)
       var calendarBtn = document.getElementById("calendar-btn");
-      var GAME_URL = "https://mouseandthebillionaire.github.io/lautir/0.2/";
+      var GAME_URL = "https://mouseandthebillionaire.github.io/lautir/1.0/";
       var START_HOUR = 12;         // noon
       var START_MINUTE = 0;
       var DURATION_MINUTES = 10;   // change if your window changes
@@ -261,11 +266,35 @@
       }
     })();
 
+    // Safari / Chrome: unlock AudioContext inside a real user-gesture handler.
+    // RNBO init is gated on this; without it the build stays silent.
+    function resumeWebAudio() {
+      if (typeof window.__lautirUnlockAudioSync === "function") {
+        window.__lautirUnlockAudioSync();
+      } else {
+        window.__lautirAudioUnlocked = true;
+        var ctx = (typeof WEBAudio !== "undefined" && WEBAudio.audioContext) ? WEBAudio.audioContext : null;
+        if (ctx && ctx.state !== "running") {
+          try { ctx.resume(); } catch (e) { console.warn("[LAUTIR] resume:", e); }
+        }
+        console.log("[LAUTIR] early tap unlock | AudioContext=" + (ctx ? ctx.state : "pending"));
+      }
+    }
+    ["touchstart", "pointerdown", "click"].forEach(function(evt) {
+      document.addEventListener(evt, resumeWebAudio, { passive: true, capture: true });
+    });
+
     var loadingScreen = document.getElementById("lautir-loading-screen");
     var loadingStatus = document.getElementById("lautir-loading-status");
+    var unityContainer = document.getElementById("unity-container");
     var progressBarEmpty = document.getElementById("unity-progress-bar-empty");
     var progressBarFull = document.getElementById("unity-progress-bar-full");
     var unityProgressKnown = false;
+
+    // Keep loader above the canvas from the first script tick.
+    document.documentElement.style.background = "#1F1F20";
+    document.body.style.background = "#1F1F20";
+    if (loadingScreen) loadingScreen.style.display = "flex";
 
     function setLoadingStatus(message) {
       if (loadingStatus) loadingStatus.textContent = message;
@@ -284,15 +313,25 @@
     }
 
     function hideLoadingScreen() {
-      if (loadingScreen) {
-        loadingScreen.classList.add("hidden");
-        loadingScreen.setAttribute("aria-busy", "false");
-      }
+      if (!loadingScreen) return;
+      loadingScreen.classList.add("hidden");
+      loadingScreen.setAttribute("aria-busy", "false");
+    }
+
+    function revealUnity() {
+      if (unityContainer) unityContainer.classList.add("ready");
+      hideLoadingScreen();
+    }
+
+    function waitForUnityPaint(callback) {
+      requestAnimationFrame(function () {
+        requestAnimationFrame(callback);
+      });
     }
 
     setLoadingStatus("Preparing…");
 
-    var loaderUrl = buildUrl + "/1.0.loader.js";
+    var loaderUrl = buildUrl + "/0.5.loader.js";
     var script = document.createElement("script");
     script.src = loaderUrl;
     script.onerror = function () {
@@ -301,9 +340,9 @@
     script.onload = function () {
       setLoadingStatus("Starting…");
       createUnityInstance(document.querySelector("#unity-canvas"), {
-        dataUrl: buildUrl + "/1.0.data",
-        frameworkUrl: buildUrl + "/1.0.framework.js",
-        codeUrl: buildUrl + "/1.0.wasm",
+        dataUrl: buildUrl + "/0.5.data",
+        frameworkUrl: buildUrl + "/0.5.framework.js",
+        codeUrl: buildUrl + "/0.5.wasm",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "Mouse _ the Billionaire",
         //productName: "LAUTIR",
@@ -312,7 +351,7 @@
         setLoadingProgress(progress);
       }).then(function (unityInstance) {
         setLoadingStatus("Ready");
-        hideLoadingScreen();
+        waitForUnityPaint(revealUnity);
       }).catch(function (message) {
         setLoadingStatus("Load failed. Please refresh.");
         alert(message);

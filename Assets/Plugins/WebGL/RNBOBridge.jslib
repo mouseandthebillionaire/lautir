@@ -32,13 +32,39 @@ mergeInto(LibraryManager.library, {
 
     window.__lautirUnlockAudioSync = function() {
       window.__lautirAudioUnlocked = true;
-      const ctx = window.__lautirGetAudioContext();
-      if (ctx && ctx.state !== "running") {
-        try { ctx.resume(); } catch (e) { console.warn("[LAUTIR] ctx.resume failed:", e); }
+      let ctx = window.__lautirGetAudioContext();
+      // Unity may not have created WEBAudio yet — make a fallback so RNBO can start.
+      if (!ctx) {
+        const WAContext = window.AudioContext || window.webkitAudioContext;
+        if (WAContext) {
+          try {
+            ctx = new WAContext();
+            window.__lautirRnbo.audioContext = ctx;
+          } catch (e) {
+            console.warn("[LAUTIR] AudioContext create failed:", e);
+          }
+        }
       }
-      console.log("[LAUTIR] audio unlock | AudioContext=" + (ctx ? ctx.state : "not ready yet"));
-      window.__lautirFlushPendingRnboInits();
-      window.__lautirRestartAllTransports();
+      const finish = function() {
+        console.log("[LAUTIR] audio unlock | AudioContext=" + (ctx ? ctx.state : "not ready yet"));
+        window.__lautirFlushPendingRnboInits();
+        window.__lautirRestartAllTransports();
+      };
+      if (ctx && ctx.state !== "running") {
+        try {
+          const p = ctx.resume();
+          if (p && typeof p.then === "function") {
+            p.then(finish).catch(function(e) {
+              console.warn("[LAUTIR] ctx.resume failed:", e);
+              finish();
+            });
+            return;
+          }
+        } catch (e) {
+          console.warn("[LAUTIR] ctx.resume failed:", e);
+        }
+      }
+      finish();
     };
 
     window.__lautirStartRnboInit = function(key) {
@@ -161,8 +187,9 @@ mergeInto(LibraryManager.library, {
   RNBO_ResumeAudioOnGesture__deps: ['$lautirEnsureGlobals'],
   RNBO_ResumeAudioOnGesture: function() {
     lautirEnsureGlobals();
-    if (typeof window.__lautirRestartAllTransports === "function") {
-      window.__lautirRestartAllTransports();
+    // Must unlock + resume here; otherwise queued RNBO inits never start.
+    if (typeof window.__lautirUnlockAudioSync === "function") {
+      window.__lautirUnlockAudioSync();
     }
   },
 

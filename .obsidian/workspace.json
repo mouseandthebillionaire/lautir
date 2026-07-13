@@ -20,8 +20,21 @@
               "icon": "lucide-file",
               "title": "GamePoemsSubmission"
             }
+          },
+          {
+            "id": "bd9dd96d049bdece",
+            "type": "leaf",
+            "state": {
+              "type": "release-notes",
+              "state": {
+                "currentVersion": "1.12.4"
+              },
+              "icon": "lucide-book-up",
+              "title": "Release Notes 1.12.4"
+            }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -183,7 +196,7 @@
       "bases:Create new base": false
     }
   },
-  "active": "4b9ff604c6bf1229",
+  "active": "bd9dd96d049bdece",
   "lastOpenFiles": [
     "Library/LastBuild.buildreport",
     "Temp/ADB-Refreshd6c6c6fc2425b463a95002a272119e7c",

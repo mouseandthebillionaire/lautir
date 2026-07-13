@@ -266,6 +266,24 @@
       }
     })();
 
+    // Safari / Chrome: unlock AudioContext inside a real user-gesture handler.
+    // RNBO init is gated on this; without it the build stays silent.
+    function resumeWebAudio() {
+      if (typeof window.__lautirUnlockAudioSync === "function") {
+        window.__lautirUnlockAudioSync();
+      } else {
+        window.__lautirAudioUnlocked = true;
+        var ctx = (typeof WEBAudio !== "undefined" && WEBAudio.audioContext) ? WEBAudio.audioContext : null;
+        if (ctx && ctx.state !== "running") {
+          try { ctx.resume(); } catch (e) { console.warn("[LAUTIR] resume:", e); }
+        }
+        console.log("[LAUTIR] early tap unlock | AudioContext=" + (ctx ? ctx.state : "pending"));
+      }
+    }
+    ["touchstart", "pointerdown", "click"].forEach(function(evt) {
+      document.addEventListener(evt, resumeWebAudio, { passive: true, capture: true });
+    });
+
     var loadingScreen = document.getElementById("lautir-loading-screen");
     var loadingStatus = document.getElementById("lautir-loading-status");
     var unityContainer = document.getElementById("unity-container");
