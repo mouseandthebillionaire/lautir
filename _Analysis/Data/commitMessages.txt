@@ -1,0 +1,239 @@
+fix: tweaked wording on information overlay and updated the url in the calendar reminder download
+
+---
+fix: loading screen
+
+---
+feat: screenshots for GamePoems submission
+
+---
+feat: version 1 - ready for GamePoems submission
+
+---
+feat: flags for build-out order and loading screen
+
+---
+fix: trying to get sound on mobile working
+
+---
+fix: new mobileTest
+
+---
+feat: testing for mobile input
+
+---
+feat: 0.4 - trying a first-in, first-out version
+
+---
+feat: version 0.4 - getting close
+
+---
+fix: fade back to circles from black and updated to a monospaced font
+
+---
+feat: version 0.3 - press space to fade to a presentation black and then progress through the song as the words are faded in and then back out at the end.
+
+---
+docs: journal covering the decisions that went into finishing the song
+
+---
+feat: final(ish) song test build
+
+---
+feat: song done!
+
+---
+fix: added the song test build link to the journal
+
+---
+docs: journal about the song test and next steps to fix
+
+---
+feat: build of the song test
+
+---
+feat: halfway through building out the song
+
+---
+feat: enterTest (v2) version where you can enter the word, reload the page, and KEEP ENTERING WORDS
+
+(also there's a bunch of other stuff under the hood from when I realized that trying to load multiple RNBO patches isn't good timing-wise or, really, sound-wise, and started trying to make it all into a single patch but the whole damn thing fell apart gloriously. More to come on that!)
+
+---
+docs: journal entry about the Enter test which tries to give the core feeling of the experience and has the first attempt at word/sound mapping
+
+---
+feat: various tests
+
+1. Alignment: painted water image and alignment
+2. Enter: how does it feel to wait between 30-90 seconds, enter a word, and hear the sound it creates?
+
+---
+fix: journal text alignment
+
+---
+docs: journal about the alignment prototypes. No real reflection yet. Still sitting with them (and have another one in the works!)
+
+---
+feat: visual alignment prototypes (wandering circles, illustration, and photograph)
+
+---
+docs: journal about the audio decisions up to this point
+
+---
+fix: fix v2 to have correct timing
+
+---
+feat: v3 properly incorperates note lengths
+
+---
+feat: lowered pad sound and added LPF to the synth
+
+---
+fix: last ditch effort for today
+
+---
+feat: added pads back in to see if audio is playing at ALL on mobile
+
+---
+fix: I don't even know anymore
+
+---
+feat: setting up debug messages to try and fix mobile issues
+
+---
+fix: RNBO bridge specifying wrong version
+
+---
+feat: Buttons rule! Taps are for fools!
+
+---
+fix: tap was working, but not audio. Maybe this fixes it? We'll see!
+
+---
+fix: tap?
+
+---
+fix: tappy tap tap
+
+---
+fix: fix tap hopefully?
+
+---
+feat: added tap for mobile
+
+---
+fix: build wasn't in the docs folder so it didn't upload
+
+---
+feat: melody version with new RNBO patch. Two synths with randomized values. I'm into it!
+
+---
+docs: journal about RNBO setup and starting to think about sounds...
+
+---
+feat: initial RNBO setup and testing of randomized melody triggered by Unity
+
+---
+feat: added a random addition of seconds to the DateTime so that there is a 5 minute window where the event might happen. Adding in some unpredictability!
+
+---
+feat: the words that you have entered get saved and displayed on the screen.
+
+Right now they are in the center of the screen. I don't love this placement, but it works for now. Off to the left might be better?
+
+---
+feat: build for this week (hopefully working now)
+
+---
+feat: informational pop-up
+
+---
+feat: build 0.2 time set to noon for testing next week
+
+---
+feat: build with mobile inout enabled
+
+---
+feat: version of build with reminder download button
+
+this thing is off-the-shelf ugly, but will work to test for the week. I'll start on Monday
+
+---
+docs: journal about failed attempt to do this thing for a week
+
+---
+feat: build 0.2. This version opens up at noon everyday for 5 minutes and keeps track of 7 days worth of words.
+
+I am going to experiment with just the word-entering portion of the experience for the next 7 days. What does it feel like to have this as a daily 'commitment?'
+
+---
+feat: fixed timing to handle the difference between waiting the full time of the event and immediately entering a word. Also added in a buffer for whatever 'thing' happens once you enter a word
+
+---
+feat: fullscreen build
+
+Not sure if just changing the templates will force the change in the already-built version on GitHub, but also just backing it up at this point. Will check for functionality as I keep tweaking
+
+---
+feat: this is most definitely a build
+
+---
+fix: build link
+
+Updated the playable prototype link and modified the alignment experiment details.
+---
+feat: most definitely a build
+
+---
+feat: a build maybe?
+
+---
+Merge remote-tracking branch 'origin/main'
+
+---
+fix: I'm not even sure
+
+---
+Merge remote-tracking branch 'origin/main'
+
+---
+fix: removed compression from WebGL build so it will run on GitHub pages (hopefully)
+
+---
+fix: prototype link
+
+Updated the link for the playable prototype and adjusted the description of the alignment experiment.
+
+Thanks copilot!
+---
+docs: journal about the alignment prototype and starting to think through what to call this whole 'alignment' thing
+
+---
+feat: alignment prototype
+
+---
+feat: better timing and display of text boxes
+
+---
+feat: initial implementation of background time-based alignment idea using circles that overlap to create a white circle at the appropriate time
+
+---
+docs: journal about waiting, alignment and collective experience
+
+---
+docs: journal about initial prototype, as well as the shift to six letters and next steps
+
+---
+feat: switch from five letters to six
+
+---
+feat: Set up the basic structure of this thing. 5 little boxes that display the word that you are writing. Timing works so that it will only show you the prompt and boxes if you're within the window
+
+---
+docs: first journal and intial why
+
+---
+feat: initial commit
+
+---
