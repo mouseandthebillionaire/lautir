@@ -18,3 +18,7 @@ The Process Journal itself appears to be much longer. I'm not quite sure why thi
 All that to say, should be fun to go through all this.
 
 On y va!
+
+## 10.15.26 | Why? Pass
+
+Right off the bat, it's worth noting that the "Why" document makes it clear that I am going into this thinking about the "Playtime" chapter and it's "Enstrangement" design lens. Does this minimize any findings? Clearly I had an idea and I set out to test it, so I think it's probably fine to not go into a project as a complete blank slate. But it still feels a little... pushy? We'll see if there were any surprises as we continue.
