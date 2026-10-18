@@ -13,24 +13,26 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Process/GamePoemsSubmission.md",
+                "file": "Process/Journal.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "GamePoemsSubmission"
+              "title": "Journal"
             }
           },
           {
-            "id": "bd9dd96d049bdece",
+            "id": "51a7ca980e8e5c1f",
             "type": "leaf",
             "state": {
-              "type": "release-notes",
+              "type": "markdown",
               "state": {
-                "currentVersion": "1.12.4"
+                "file": "Process/ClosingStatement.md",
+                "mode": "source",
+                "source": false
               },
-              "icon": "lucide-book-up",
-              "title": "Release Notes 1.12.4"
+              "icon": "lucide-file",
+              "title": "ClosingStatement"
             }
           }
         ],
@@ -54,7 +56,9 @@
               "type": "file-explorer",
               "state": {
                 "sortOrder": "alphabetical",
-                "autoReveal": false
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
               },
               "icon": "lucide-folder-closed",
               "title": "Files"
@@ -196,8 +200,16 @@
       "bases:Create new base": false
     }
   },
-  "active": "bd9dd96d049bdece",
+  "active": "51a7ca980e8e5c1f",
   "lastOpenFiles": [
+    "_Analysis/Data/Conversations.md",
+    "Screenshot 2026-10-18 at 10.52.48.png",
+    "Screenshot 2026-10-18 at 10.53.12.png",
+    "Process/ClosingStatement.md",
+    "Screenshot 2026-10-17 at 15.00.53.png",
+    "Screenshot 2026-10-17 at 15.01.19.png",
+    "Process/Journal.md",
+    "Process/GamePoemsSubmission.md",
     "Library/LastBuild.buildreport",
     "Temp/ADB-Refreshd6c6c6fc2425b463a95002a272119e7c",
     "Temp/ADB-Refreshed52809d9f4cc4f188bea0c2fd495fa1",
@@ -208,19 +220,12 @@
     "Library/Bee/PlayerScriptAssemblies/Unity.2D.PixelPerfect.dll",
     "Library/Bee/PlayerScriptAssemblies/Cycling74.LautirSynthHelper.cs.pdb",
     "Library/Bee/PlayerScriptAssemblies/Assembly-CSharp.pdb",
-    "Library/Bee/PlayerScriptAssemblies/Assembly-CSharp.dll",
     "Process/Media/lautir.png",
     "Process/Media/cursor.png",
     "Process/Media/Screenshot 2026-06-26 at 14.22.43.png",
     "Process/Media/Screenshot 2026-06-26 at 14.21.38.png",
-    "Process/Journal.md",
-    "Process/GamePoemsSubmission.md",
     "Process/Media/gamepoems-photoAndIllustration-frame.png",
     "Process/Media/gamepoems-wanderers-frame.png",
-    "Process/Media/gamepoems-illustrationAlignment-frame.png",
-    "Process/Media/gamepoems-screenshot-1280x720.png",
-    "Assets/Resources/Water_1/layer_11.png",
-    "Assets/Resources/Water_1/layer_10.png",
     "bridge.md",
     "Tools/magic-url-auth/node_modules/sqlite3/README.md",
     "Tools/magic-url-auth/node_modules/node-gyp/README.md",
@@ -241,8 +246,6 @@
     "Tools/magic-url-auth/node_modules/iconv-lite/README.md",
     "Tools/magic-url-auth/node_modules/semver/README.md",
     "Tools/magic-url-auth/node_modules/encoding/node_modules/iconv-lite/README.md",
-    "Tools/magic-url-auth/node_modules/socks/README.md",
-    "Tools/magic-url-auth/node_modules/ip-address/README.md",
-    "Tools/magic-url-auth/node_modules/tar/README.md"
+    "Tools/magic-url-auth/node_modules/socks/README.md"
   ]
 }
